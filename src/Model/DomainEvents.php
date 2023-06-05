@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Model;
@@ -12,7 +13,6 @@ use Traversable;
  */
 final readonly class DomainEvents implements IteratorAggregate
 {
-
     /**
      * @var DomainEvent[]
      */

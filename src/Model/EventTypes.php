@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Model;
@@ -7,6 +8,7 @@ use ArrayIterator;
 use IteratorAggregate;
 use Traversable;
 use Webmozart\Assert\Assert;
+
 use function array_map;
 
 /**

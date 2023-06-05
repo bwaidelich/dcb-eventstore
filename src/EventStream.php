@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore;
@@ -13,7 +14,6 @@ use Wwwision\DCBEventStore\Model\SequenceNumber;
  */
 interface EventStream extends IteratorAggregate
 {
-
     public function withMinimumSequenceNumber(SequenceNumber $sequenceNumber): self;
 
     public function limit(int $limit): self;

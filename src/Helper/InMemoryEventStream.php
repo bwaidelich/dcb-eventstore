@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Helper;
@@ -7,11 +8,11 @@ use Traversable;
 use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Model\EventEnvelope;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
+
 use function array_key_last;
 
 final readonly class InMemoryEventStream implements EventStream
 {
-
     /**
      * @param EventEnvelope[] $events
      */
@@ -19,7 +20,8 @@ final readonly class InMemoryEventStream implements EventStream
         private array $events,
         private ?SequenceNumber $minimumSequenceNumber,
         private ?int $limit,
-    ) {}
+    ) {
+    }
 
     public static function create(EventEnvelope ...$events): self
     {
@@ -58,7 +60,7 @@ final readonly class InMemoryEventStream implements EventStream
                 continue;
             }
             yield $eventEnvelope;
-            $iteration ++;
+            $iteration++;
             if ($this->limit !== null && $iteration >= $this->limit) {
                 return;
             }

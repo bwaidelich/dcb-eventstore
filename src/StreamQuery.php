@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore;
@@ -12,7 +13,8 @@ final readonly class StreamQuery
     public function __construct(
         public ?DomainIds $domainIds,
         public ?EventTypes $types,
-    ) {}
+    ) {
+    }
 
     public function matches(Event $event): bool
     {

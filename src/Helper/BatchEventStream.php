@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Helper;
@@ -11,13 +12,13 @@ use Wwwision\DCBEventStore\Model\SequenceNumber;
 
 final class BatchEventStream implements EventStream
 {
-
     private function __construct(
         private EventStream $wrappedEventStream,
         private readonly int $batchSize,
         private readonly ?SequenceNumber $minimumSequenceNumber,
         private readonly ?int $limit,
-    ) {}
+    ) {
+    }
 
     public static function create(EventStream $wrappedEventStream, int $batchSize): self
     {
@@ -57,7 +58,7 @@ final class BatchEventStream implements EventStream
             $eventEnvelope = null;
             foreach ($this->wrappedEventStream as $eventEnvelope) {
                 yield $eventEnvelope;
-                $iteration ++;
+                $iteration++;
                 if ($this->limit !== null && $iteration >= $this->limit) {
                     return;
                 }

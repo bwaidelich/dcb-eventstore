@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Model;
@@ -8,6 +9,7 @@ use Closure;
 use IteratorAggregate;
 use JsonSerializable;
 use Traversable;
+
 use function array_map;
 
 /**
@@ -15,7 +17,6 @@ use function array_map;
  */
 final readonly class Events implements IteratorAggregate, JsonSerializable
 {
-
     /**
      * @var Event[]
      */

@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Model;
 
-interface DomainEvent {
-
+interface DomainEvent
+{
     /**
      * @param array<mixed> $data
      */

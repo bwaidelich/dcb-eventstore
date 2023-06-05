@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Model;
@@ -8,6 +9,7 @@ use IteratorAggregate;
 use JsonSerializable;
 use Traversable;
 use Webmozart\Assert\Assert;
+
 use function array_diff;
 use function array_key_exists;
 use function array_merge;
@@ -18,13 +20,11 @@ use function json_decode;
  */
 final readonly class DomainIds implements IteratorAggregate, JsonSerializable
 {
-
     /**
      * @param array<string, string> $ids
      */
     private function __construct(private array $ids)
     {
-
     }
 
     public static function single(string $key, string $value): self

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Exception;
@@ -8,7 +9,6 @@ use Wwwision\DCBEventStore\Model\EventId;
 
 final class ConditionalAppendFailed extends RuntimeException
 {
-
     private function __construct(string $message)
     {
         parent::__construct($message);
