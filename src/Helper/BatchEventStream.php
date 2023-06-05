@@ -10,6 +10,13 @@ use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Model\EventEnvelope;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
 
+/**
+ * An implementation of the {@see EventStream} interface that allows to fetch events of the wrapped event stream in batches
+ * This allows to iterate through a lot of events without them all being loaded into memory at once
+ *
+ * Usage:
+ * $eventStream = BatchEventStream::create($originalStream, 1000); // fetch a maximum of 1000 events at once
+ */
 final class BatchEventStream implements EventStream
 {
     private function __construct(

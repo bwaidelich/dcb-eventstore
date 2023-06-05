@@ -9,6 +9,8 @@ use IteratorAggregate;
 use Traversable;
 
 /**
+ * A type-safe set of {@see DomainEvent} instances
+ *
  * @implements IteratorAggregate<DomainEvent>
  */
 final readonly class DomainEvents implements IteratorAggregate

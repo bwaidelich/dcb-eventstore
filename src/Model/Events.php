@@ -13,6 +13,8 @@ use Traversable;
 use function array_map;
 
 /**
+ * A type-safe set of {@see Event} instances
+ *
  * @implements IteratorAggregate<Event>
  */
 final readonly class Events implements IteratorAggregate, JsonSerializable

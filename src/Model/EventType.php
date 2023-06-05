@@ -6,6 +6,9 @@ namespace Wwwision\DCBEventStore\Model;
 
 use JsonSerializable;
 
+/**
+ * The type of an event, e.g. "CustomerRenamed"
+ */
 final readonly class EventType implements JsonSerializable
 {
     private function __construct(public string $value)

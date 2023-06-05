@@ -7,11 +7,12 @@ namespace Wwwision\DCBEventStore\Model;
 use ArrayIterator;
 use IteratorAggregate;
 use Traversable;
-use Webmozart\Assert\Assert;
 
 use function array_map;
 
 /**
+ * A type-safe set of {@see EventType} instances
+ *
  * @implements IteratorAggregate<EventType>
  */
 final class EventTypes implements IteratorAggregate

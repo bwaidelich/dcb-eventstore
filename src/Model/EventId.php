@@ -7,6 +7,9 @@ namespace Wwwision\DCBEventStore\Model;
 use JsonSerializable;
 use Ramsey\Uuid\Uuid;
 
+/**
+ * Globally unique identifier of an event (usually formatted as UUID v4)
+ */
 final readonly class EventId implements JsonSerializable
 {
     private function __construct(public string $value)

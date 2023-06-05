@@ -6,6 +6,11 @@ namespace Wwwision\DCBEventStore\Model;
 
 use Webmozart\Assert\Assert;
 
+/**
+ * The global sequence number of an event in the Event Store
+ *
+ * Note: The sequence number is usually not referred to in user land code, but it can be used to batch process an event stream for example
+ */
 final readonly class SequenceNumber
 {
     private function __construct(

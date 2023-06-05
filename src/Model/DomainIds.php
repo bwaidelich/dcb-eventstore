@@ -16,6 +16,8 @@ use function array_merge;
 use function json_decode;
 
 /**
+ * A type-safe set of {@see DomainId} instances
+ *
  * @implements IteratorAggregate<string, string>
  */
 final readonly class DomainIds implements IteratorAggregate, JsonSerializable

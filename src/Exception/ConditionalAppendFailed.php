@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Exception;
 
 use RuntimeException;
+use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Model\EventId;
 
+/**
+ * An exception that is thrown when a {@see EventStore::conditionalAppend()} call has failed
+ */
 final class ConditionalAppendFailed extends RuntimeException
 {
     private function __construct(string $message)
@@ -25,6 +29,6 @@ final class ConditionalAppendFailed extends RuntimeException
 
     public static function becauseEventIdsDontMatch(EventId $expectedId, EventId $actualId): self
     {
-        return new self("Expected event id \"{$expectedId->value}\" does not match the actual id of \"{$actualId->value}\"");
+        return new self("Expected event id \"$expectedId->value\" does not match the actual id of \"$actualId->value\"");
     }
 }

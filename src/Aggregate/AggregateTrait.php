@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Helper;
+namespace Wwwision\DCBEventStore\Aggregate;
 
 use Wwwision\DCBEventStore\Model\DomainEvent;
 use Wwwision\DCBEventStore\Model\DomainEvents;
 
+/**
+ * Trait that _can_ be implemented by aggregate classes in order to satisfy the {@see Aggregate} interface
+ */
 trait AggregateTrait
 {
     private ?DomainEvents $recordedEvents = null;

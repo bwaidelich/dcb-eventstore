@@ -13,7 +13,7 @@ use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\EventType;
 use Wwwision\DCBEventStore\Model\EventTypes;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
-use Wwwision\DCBEventStore\StreamQuery;
+use Wwwision\DCBEventStore\Model\StreamQuery;
 use Wwwision\DCBEventStore\Tests\Unit\EventStoreTestBase;
 use Wwwision\DCBEventStore\Helper\InMemoryEventStore;
 use Wwwision\DCBEventStore\Helper\InMemoryEventStream;

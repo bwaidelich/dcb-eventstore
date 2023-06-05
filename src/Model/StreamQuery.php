@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore;
+namespace Wwwision\DCBEventStore\Model;
 
-use Wwwision\DCBEventStore\Model\DomainIds;
-use Wwwision\DCBEventStore\Model\Event;
-use Wwwision\DCBEventStore\Model\EventTypes;
-
+/**
+ * A Query describing events by their {@see DomainIds} and/or {@see EventTypes}
+ */
 final readonly class StreamQuery
 {
     public function __construct(

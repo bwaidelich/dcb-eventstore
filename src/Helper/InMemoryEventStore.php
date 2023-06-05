@@ -10,8 +10,17 @@ use Wwwision\DCBEventStore\Model\EventEnvelope;
 use Wwwision\DCBEventStore\Model\EventId;
 use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
-use Wwwision\DCBEventStore\StreamQuery;
+use Wwwision\DCBEventStore\Model\StreamQuery;
 
+/**
+ * An in-memory implementation of the {@see EventStore} interface that mostly serves testing or debugging purposes
+ *
+ * Usage:
+ * $eventStore = InMemoryEventStore::create();
+ * $eventStore->append($events);
+ *
+ * $inMemoryStream = $eventStore->stream($query);
+ */
 final class InMemoryEventStore implements EventStore
 {
     /**

@@ -16,7 +16,7 @@ use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\EventType;
 use Wwwision\DCBEventStore\Model\EventTypes;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
-use Wwwision\DCBEventStore\StreamQuery;
+use Wwwision\DCBEventStore\Model\StreamQuery;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use function array_map;

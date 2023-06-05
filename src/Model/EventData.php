@@ -6,6 +6,9 @@ namespace Wwwision\DCBEventStore\Model;
 
 use JsonSerializable;
 
+/**
+ * String-based data of an event (usually the JSON-encoded payload of a {@see DomainEvent})
+ */
 final readonly class EventData implements JsonSerializable
 {
     private function __construct(

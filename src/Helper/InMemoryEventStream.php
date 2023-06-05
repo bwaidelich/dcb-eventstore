@@ -11,6 +11,12 @@ use Wwwision\DCBEventStore\Model\SequenceNumber;
 
 use function array_key_last;
 
+/**
+ * An in-memory implementation of the {@see EventStream} interface that mostly serves testing or debugging purposes
+ *
+ * Usage:
+ * $eventStream = InMemoryEventStream::create($event1 ,$event2);
+ */
 final readonly class InMemoryEventStream implements EventStream
 {
     /**
