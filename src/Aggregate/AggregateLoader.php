@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Aggregate;
 
+use Closure;
 use Wwwision\DCBEventStore\EventNormalizer;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exception\ConditionalAppendFailed;
@@ -45,11 +46,11 @@ final readonly class AggregateLoader
      * 3. the specified $callback is invoked allowing to interact with the specified $aggregates
      * 4. all events produced during the callback are persisted to the Event Store via {@see EventStore::conditionalAppend()}
      *
-     * @param \Closure $callback
+     * @param Closure $callback
      * @param Aggregate ...$aggregates
      * @throws ConditionalAppendFailed
      */
-    public function transactional(\Closure $callback, Aggregate ...$aggregates): void
+    public function transactional(Closure $callback, Aggregate ...$aggregates): void
     {
         $domainIds = DomainIds::none();
         $eventTypes = EventTypes::none();
