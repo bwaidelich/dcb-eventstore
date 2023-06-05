@@ -22,6 +22,5 @@ namespace Wwwision\DCBEventStore\Model;
  */
 interface DomainEvent
 {
-
     public function domainIds(): DomainIds;
 }

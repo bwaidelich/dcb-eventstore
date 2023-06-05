@@ -48,7 +48,6 @@ use Wwwision\DCBEventStore\Model\EventTypes;
  */
 interface Aggregate
 {
-
     public function apply(DomainEvent $domainEvent): void;
 
     public function domainIds(): DomainIds;
