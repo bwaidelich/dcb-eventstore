@@ -1,0 +1,55 @@
+{
+  "name": "wwwision/dcb-eventstore",
+  "description": "Implementation of the Dynamic Consistency Boundary pattern described by Sara Pellegrini",
+  "type": "package",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Bastian Waidelich",
+      "email": "b.waidelich@wwwision.de"
+    }
+  ],
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/bwaidelich"
+    },
+    {
+      "type": "paypal",
+      "url": "https://www.paypal.me/bwaidelich"
+    }
+  ],
+  "config": {
+    "platform": {
+      "php": "8.2"
+    }
+  },
+  "require": {
+    "php": "8.2",
+    "ramsey/uuid": "^4.7",
+    "webmozart/assert": "^1.11"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "phpstan/phpstan": "^1.10",
+    "phpunit/phpunit": "^10.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Wwwision\\DCBEventStore\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Wwwision\\DCBEventStore\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test-phpstan": "phpstan",
+    "test-unit": "phpunit tests",
+    "test": [
+      "@test-phpstan",
+      "@test-unit"
+    ]
+  }
+}
