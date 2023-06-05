@@ -6,6 +6,7 @@ namespace Wwwision\DCBEventStore\Model;
 
 use JsonSerializable;
 use Ramsey\Uuid\Uuid;
+use Webmozart\Assert\Assert;
 
 /**
  * Globally unique identifier of an event (usually formatted as UUID v4)
@@ -14,7 +15,7 @@ final readonly class EventId implements JsonSerializable
 {
     private function __construct(public string $value)
     {
-        // TODO validate
+        Assert::notEmpty($this->value);
     }
 
     public static function create(): self

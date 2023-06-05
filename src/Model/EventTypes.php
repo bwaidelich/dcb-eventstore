@@ -74,7 +74,9 @@ final class EventTypes implements IteratorAggregate
 
     public function merge(self $other): self
     {
-        // TODO check equality
+        if ($this->types === $other->types) {
+            return $this;
+        }
         return new self(array_merge($this->types, $other->types));
     }
 }

@@ -96,7 +96,6 @@ final readonly class DomainIds implements IteratorAggregate, JsonSerializable
 
     public function intersects(self $other): bool
     {
-        // TODO: refactor
         foreach ($other->ids as $key => $value) {
             if ($this->contains($key, $value)) {
                 return true;
