@@ -9,7 +9,7 @@ use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Model\EventId;
 
 /**
- * An exception that is thrown when a {@see EventStore::conditionalAppend()} call has failed
+ * An exception that is thrown when a {@see EventStore::append()} call has failed
  */
 final class ConditionalAppendFailed extends RuntimeException
 {

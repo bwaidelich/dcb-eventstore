@@ -12,6 +12,8 @@ use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
 use Wwwision\DCBEventStore\Model\StreamQuery;
 
+use function count;
+
 /**
  * An in-memory implementation of the {@see EventStore} interface that mostly serves testing or debugging purposes
  *
@@ -47,19 +49,7 @@ final class InMemoryEventStore implements EventStore
         return InMemoryEventStream::create(...array_filter($this->eventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $query->matches($eventEnvelope->event)));
     }
 
-    public function append(Events $events): void
-    {
-        $sequenceNumber = SequenceNumber::fromInteger(count($this->eventEnvelopes));
-        foreach ($events as $event) {
-            $sequenceNumber = $sequenceNumber->next();
-            $this->eventEnvelopes[] = new EventEnvelope(
-                $sequenceNumber,
-                $event,
-            );
-        }
-    }
-
-    public function conditionalAppend(Events $events, StreamQuery $query, ?EventId $lastEventId): void
+    public function append(Events $events, StreamQuery $query, ?EventId $lastEventId): void
     {
         $lastEvent = $this->stream($query)->last();
         if ($lastEvent === null) {
@@ -71,6 +61,13 @@ final class InMemoryEventStore implements EventStore
         } elseif (!$lastEvent->event->id->equals($lastEventId)) {
             throw ConditionalAppendFailed::becauseEventIdsDontMatch($lastEventId, $lastEvent->event->id);
         }
-        $this->append($events);
+        $sequenceNumber = SequenceNumber::fromInteger(count($this->eventEnvelopes));
+        foreach ($events as $event) {
+            $sequenceNumber = $sequenceNumber->next();
+            $this->eventEnvelopes[] = new EventEnvelope(
+                $sequenceNumber,
+                $event,
+            );
+        }
     }
 }

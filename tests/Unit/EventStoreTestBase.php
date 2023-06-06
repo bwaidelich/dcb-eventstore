@@ -47,7 +47,7 @@ abstract class EventStoreTestBase  extends TestCase
     public function test_events(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(new StreamQuery(null, null)), [
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingAny()), [
             ['id' => 'id-a', 'data' => 'a', 'type' => 'SomeEventType', 'domainIds' => ['foo' => 'bar', 'baz' => 'foos'], 'sequenceNumber' => 1],
             ['id' => 'id-b', 'data' => 'b', 'type' => 'SomeOtherEventType', 'domainIds' => ['foo' => 'bar'],'sequenceNumber' => 2],
             ['id' => 'id-c', 'data' => 'c', 'type' => 'SomeEventType', 'domainIds' => ['foo' => 'bar'],'sequenceNumber' => 3],
@@ -60,7 +60,7 @@ abstract class EventStoreTestBase  extends TestCase
     public function test_stream_allows_filtering_of_events_by_domain_ids(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(new StreamQuery(DomainIds::single('baz', 'foos'), null)), [
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIds(DomainIds::single('baz', 'foos'),)), [
             ['data' => 'a'],
             ['data' => 'd'],
             ['data' => 'e'],
@@ -71,7 +71,7 @@ abstract class EventStoreTestBase  extends TestCase
     public function test_stream_allows_filtering_of_events_by_event_types(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(new StreamQuery(null, EventTypes::single('SomeEventType'))), [
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingTypes(EventTypes::single('SomeEventType'))), [
             ['data' => 'a'],
             ['data' => 'c'],
             ['data' => 'e'],
@@ -81,7 +81,7 @@ abstract class EventStoreTestBase  extends TestCase
     public function test_stream_allows_filtering_of_events_by_domain_ids_and_event_types(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(new StreamQuery(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'))), [
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'))), [
             ['data' => 'a'],
             ['data' => 'e'],
         ]);
@@ -91,7 +91,7 @@ abstract class EventStoreTestBase  extends TestCase
     {
         $this->appendDummyEvents();
 
-        $query = new StreamQuery(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
+        $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
         $stream = $this->getEventStore()->stream($query);
         $lastEventId = $stream->last()->event->id;
 
@@ -105,7 +105,7 @@ abstract class EventStoreTestBase  extends TestCase
     {
         $this->appendDummyEvents();
 
-        $query = new StreamQuery(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
+        $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
 
         $this->expectException(ConditionalAppendFailed::class);
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, null);
@@ -113,7 +113,7 @@ abstract class EventStoreTestBase  extends TestCase
 
     public function test_conditionalAppend_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
     {
-        $query = new StreamQuery(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventTypeThatDidNotOccur'));
+        $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventTypeThatDidNotOccur'));
 
         $this->expectException(ConditionalAppendFailed::class);
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, EventId::create());
@@ -144,7 +144,7 @@ abstract class EventStoreTestBase  extends TestCase
      */
     final protected function appendEvents(array $events): void
     {
-        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)));
+        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), StreamQuery::matchingNone(), null);
     }
 
     /**
@@ -152,7 +152,7 @@ abstract class EventStoreTestBase  extends TestCase
      */
     final protected function conditionalAppendEvents(array $events, StreamQuery $query, ?EventId $lastEventId): void
     {
-        $this->getEventStore()->conditionalAppend(Events::fromArray(array_map(self::arrayToEvent(...), $events)), $query, $lastEventId);
+        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), $query, $lastEventId);
     }
 
     /**
