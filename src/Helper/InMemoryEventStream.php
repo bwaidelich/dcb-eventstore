@@ -34,6 +34,11 @@ final readonly class InMemoryEventStream implements EventStream
         return new self($events, null, null);
     }
 
+    public static function empty(): self
+    {
+        return new self([], null, null);
+    }
+
     public function withMinimumSequenceNumber(SequenceNumber $sequenceNumber): self
     {
         if ($this->minimumSequenceNumber !== null && $sequenceNumber->equals($this->minimumSequenceNumber)) {

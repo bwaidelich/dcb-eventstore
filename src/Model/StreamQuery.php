@@ -65,4 +65,9 @@ final readonly class StreamQuery
         }
         return true;
     }
+
+    public function matchesNone(): bool
+    {
+        return $this->domainIds?->isNone() || $this->types?->isNone();
+    }
 }

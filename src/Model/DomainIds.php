@@ -131,4 +131,9 @@ final readonly class DomainIds implements IteratorAggregate, JsonSerializable
     {
         return $this->ids;
     }
+
+    public function isNone(): bool
+    {
+        return $this->ids === [];
+    }
 }

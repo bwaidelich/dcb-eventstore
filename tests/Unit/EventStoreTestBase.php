@@ -87,7 +87,26 @@ abstract class EventStoreTestBase  extends TestCase
         ]);
     }
 
-    public function test_conditionalAppend_fails_if_new_events_match_the_specified_query(): void
+    public function test_stream_allows_fetching_all_events(): void
+    {
+        $this->appendDummyEvents();
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingAny()), [
+            ['data' => 'a'],
+            ['data' => 'b'],
+            ['data' => 'c'],
+            ['data' => 'd'],
+            ['data' => 'e'],
+            ['data' => 'f'],
+        ]);
+    }
+
+    public function test_stream_allows_fetching_no_events(): void
+    {
+        $this->appendDummyEvents();
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingNone()), []);
+    }
+
+    public function test_append_fails_if_new_events_match_the_specified_query(): void
     {
         $this->appendDummyEvents();
 
@@ -101,7 +120,7 @@ abstract class EventStoreTestBase  extends TestCase
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, $lastEventId);
     }
 
-    public function test_conditionalAppend_fails_if_no_last_event_id_was_expected_but_query_matches_events(): void
+    public function test_append_fails_if_no_last_event_id_was_expected_but_query_matches_events(): void
     {
         $this->appendDummyEvents();
 
@@ -111,7 +130,7 @@ abstract class EventStoreTestBase  extends TestCase
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, null);
     }
 
-    public function test_conditionalAppend_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
+    public function test_append_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
     {
         $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventTypeThatDidNotOccur'));
 

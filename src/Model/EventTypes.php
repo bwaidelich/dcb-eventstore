@@ -79,4 +79,9 @@ final class EventTypes implements IteratorAggregate
         }
         return new self(array_merge($this->types, $other->types));
     }
+
+    public function isNone(): bool
+    {
+        return $this->types === [];
+    }
 }

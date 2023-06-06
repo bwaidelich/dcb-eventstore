@@ -46,6 +46,9 @@ final class InMemoryEventStore implements EventStore
 
     public function stream(StreamQuery $query): InMemoryEventStream
     {
+        if ($query->matchesNone()) {
+            return InMemoryEventStream::empty();
+        }
         return InMemoryEventStream::create(...array_filter($this->eventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $query->matches($eventEnvelope->event)));
     }
 
