@@ -19,13 +19,8 @@
       "url": "https://www.paypal.me/bwaidelich"
     }
   ],
-  "config": {
-    "platform": {
-      "php": "8.2"
-    }
-  },
   "require": {
-    "php": "8.2",
+    "php": ">=8.2",
     "ramsey/uuid": "^4.7",
     "webmozart/assert": "^1.11"
   },
