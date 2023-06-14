@@ -68,11 +68,11 @@ final class DomainIdsTest extends TestCase
         yield ['ids1' => [], 'ids2' => [], 'expectedResult' => true];
         yield ['ids1' => ['foo' => 'bar'], 'ids2' => ['foo' => 'bar'], 'expectedResult' => true];
         yield ['ids1' => ['foo' => 'bar', 'bar' => 'baz'], 'ids2' => ['bar' => 'baz', 'foo' => 'bar'], 'expectedResult' => true];
-//
-//        yield ['ids1' => [], 'ids2' => ['foo' => 'bar'], 'expectedResult' => false];
-//        yield ['ids1' => ['foo' => 'bar'], 'ids2' => ['foo' => 'bar2'], 'expectedResult' => false];
-//        yield ['ids1' => ['foo' => 'bar'], 'ids2' => ['bar' => 'bar'], 'expectedResult' => false];
-//        yield ['ids1' => ['foo' => 'bar', 'baz' => 'foos'], 'ids2' => ['foo' => 'other', 'baz' => 'other'], 'expectedResult' => false];
+
+        yield ['ids1' => [], 'ids2' => ['foo' => 'bar'], 'expectedResult' => false];
+        yield ['ids1' => ['foo' => 'bar'], 'ids2' => ['foo' => 'bar2'], 'expectedResult' => false];
+        yield ['ids1' => ['foo' => 'bar'], 'ids2' => ['bar' => 'bar'], 'expectedResult' => false];
+        yield ['ids1' => ['foo' => 'bar', 'baz' => 'foos'], 'ids2' => ['foo' => 'other', 'baz' => 'other'], 'expectedResult' => false];
     }
 
     /**

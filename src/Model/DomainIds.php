@@ -106,7 +106,8 @@ final readonly class DomainIds implements IteratorAggregate, JsonSerializable
 
     public function equals(self $other): bool
     {
-        return array_diff($this->ids, $other->ids) === [];
+        /** @noinspection TypeUnsafeComparisonInspection */
+        return $this->ids == $other->ids;
     }
 
     public function getIterator(): Traversable
