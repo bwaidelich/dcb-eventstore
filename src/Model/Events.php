@@ -6,6 +6,7 @@ namespace Wwwision\DCBEventStore\Model;
 
 use ArrayIterator;
 use Closure;
+use Countable;
 use IteratorAggregate;
 use JsonSerializable;
 use Traversable;
@@ -17,7 +18,7 @@ use function array_map;
  *
  * @implements IteratorAggregate<Event>
  */
-final readonly class Events implements IteratorAggregate, JsonSerializable
+final readonly class Events implements IteratorAggregate, JsonSerializable, Countable
 {
     /**
      * @var Event[]
@@ -42,17 +43,14 @@ final readonly class Events implements IteratorAggregate, JsonSerializable
         return new self(...$events);
     }
 
+    public static function none(): self
+    {
+        return new self();
+    }
+
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->events);
-    }
-
-    /**
-     * @return Event[]
-     */
-    public function jsonSerialize(): array
-    {
-        return $this->events;
     }
 
     /**
@@ -74,5 +72,18 @@ final readonly class Events implements IteratorAggregate, JsonSerializable
             $events = self::fromArray([$events]);
         }
         return self::fromArray([...$this->events, ...$events]);
+    }
+
+    public function count(): int
+    {
+        return count($this->events);
+    }
+
+    /**
+     * @return Event[]
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->events;
     }
 }

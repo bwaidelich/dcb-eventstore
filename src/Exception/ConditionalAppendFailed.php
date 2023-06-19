@@ -7,9 +7,10 @@ namespace Wwwision\DCBEventStore\Exception;
 use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Model\EventId;
+use Wwwision\DCBEventStore\Model\ExpectedLastEventId;
 
 /**
- * An exception that is thrown when a {@see EventStore::append()} call has failed
+ * An exception that is thrown when a {@see EventStore::conditionalAppend()} call has failed
  */
 final class ConditionalAppendFailed extends RuntimeException
 {
@@ -27,8 +28,8 @@ final class ConditionalAppendFailed extends RuntimeException
         return new self('The event store contained events matching the specified query but none were expected');
     }
 
-    public static function becauseEventIdsDontMatch(EventId $expectedId, EventId $actualId): self
+    public static function becauseEventIdsDontMatch(ExpectedLastEventId $expectedId, EventId $actualId): self
     {
-        return new self("Expected event id \"$expectedId->value\" does not match the actual id of \"$actualId->value\"");
+        return new self("Expected event id \"$expectedId\" does not match the actual id of \"$actualId->value\"");
     }
 }

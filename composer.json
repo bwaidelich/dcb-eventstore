@@ -28,7 +28,7 @@
     "roave/security-advisories": "dev-latest",
     "phpstan/phpstan": "^1.10",
     "squizlabs/php_codesniffer": "^4.0.x-dev",
-    "phpunit/phpunit": "^10.1"
+    "phpunit/phpunit": "^10.2"
   },
   "autoload": {
     "psr-4": {
@@ -44,11 +44,13 @@
     "test-phpstan": "phpstan",
     "test-cs": "phpcs --colors --standard=PSR12 --exclude=Generic.Files.LineLength src",
     "test-cs:fix": "phpcbf --colors --standard=PSR12 --exclude=Generic.Files.LineLength src",
-    "test-unit": "phpunit tests",
+    "test-unit": "phpunit tests/Unit",
+    "test-integration": "phpunit tests/Integration",
     "test": [
       "@test-phpstan",
       "@test-cs",
-      "@test-unit"
+      "@test-unit",
+      "@test-integration"
     ]
   }
 }

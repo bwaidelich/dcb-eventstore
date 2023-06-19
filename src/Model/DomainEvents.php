@@ -30,6 +30,11 @@ final readonly class DomainEvents implements IteratorAggregate
         return new self();
     }
 
+    public static function single(DomainEvent $domainEvent): self
+    {
+        return new self($domainEvent);
+    }
+
     /**
      * @param DomainEvent[] $domainEvents
      */

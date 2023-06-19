@@ -14,29 +14,29 @@ use Wwwision\DCBEventStore\Model\EventTypes;
 use Wwwision\DCBEventStore\Model\StreamQuery;
 
 #[CoversClass(StreamQuery::class)]
+#[CoversClass(DomainIds::class)]
+#[CoversClass(EventTypes::class)]
 final class StreamQueryTest extends TestCase
 {
 
     public static function dataprovider_matches(): iterable
     {
         $eventType1 = EventType::fromString('SomeEventType');
-        $domainIds1 = DomainIds::fromArray(['foo' => 'bar', 'bar' => 'baz']);
+        $domainIds1 = DomainIds::fromArray([['foo' => 'bar'], ['bar' => 'baz']]);
         $event = new Event(EventId::create(), $eventType1, EventData::fromString(''), $domainIds1);
 
-        yield ['query' => StreamQuery::matchingNone(), 'event' => $event, 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingIds(DomainIds::none()), 'event' => $event, 'expectedResult' => false];
         yield ['query' => StreamQuery::matchingIds(DomainIds::single('foo', 'not_bar')), 'event' => $event, 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingTypes(EventTypes::none()), 'event' => $event, 'expectedResult' => false];
         yield ['query' => StreamQuery::matchingTypes(EventTypes::single('SomeOtherEventType')), 'event' => $event, 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::single('foo', 'bar'), EventTypes::none()), 'event' => $event, 'expectedResult' => false];
         yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::single('foo', 'not_bar'), EventTypes::single('SomeEventType')), 'event' => $event, 'expectedResult' => false];
 
         yield ['query' => StreamQuery::matchingIds(DomainIds::single('foo', 'bar')), 'event' => $event, 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingIds(DomainIds::fromArray(['foo' => 'bar', 'bar' => 'not_baz'])), 'event' => $event, 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingIds(DomainIds::fromArray(['foo' => 'bar', 'bar' => 'baz', 'foos' => 'bars'])), 'event' => $event, 'expectedResult' => true];
+        yield ['query' => StreamQuery::matchingIds(DomainIds::fromArray([['foo' => 'bar'], ['bar' => 'not_baz']])), 'event' => $event, 'expectedResult' => true];
+        yield ['query' => StreamQuery::matchingIds(DomainIds::fromArray([['foo' => 'bar'], ['bar' => 'baz'], ['foos' => 'bars']])), 'event' => $event, 'expectedResult' => true];
         yield ['query' => StreamQuery::matchingTypes(EventTypes::single('SomeEventType')), 'event' => $event, 'expectedResult' => true];
         yield ['query' => StreamQuery::matchingTypes(EventTypes::create(EventType::fromString('SomeOtherEventType'), EventType::fromString('SomeEventType'))), 'event' => $event, 'expectedResult' => true];
         yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::single('foo', 'bar'), EventTypes::single('SomeEventType')), 'event' => $event, 'expectedResult' => true];
+
+        yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::fromArray([['key2' => 'value1'], ['key1' => 'value3']]), EventTypes::single('Event4')), 'event' => new Event(EventId::create(), EventType::fromString('Event3'), EventData::fromString(''), DomainIds::single('key2', 'value1')), 'expectedResult' => false];
     }
 
     /**
@@ -48,32 +48,6 @@ final class StreamQueryTest extends TestCase
             self::assertTrue($query->matches($event));
         } else {
             self::assertFalse($query->matches($event));
-        }
-    }
-
-    public static function dataprovider_matchesNone(): iterable
-    {
-        yield ['query' => StreamQuery::matchingNone(), 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingIds(DomainIds::none()), 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingTypes(EventTypes::none()), 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::none(), EventTypes::single('SomeEventType')), 'expectedResult' => true];
-        yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::single('foo', 'bar'), EventTypes::none()), 'expectedResult' => true];
-
-        yield ['query' => StreamQuery::matchingIds(DomainIds::single('foo', 'bar')), 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingTypes(EventTypes::single('SomeEventType')), 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingIdsAndTypes(DomainIds::single('foo', 'bar'), EventTypes::single('SomeEventType')), 'expectedResult' => false];
-        yield ['query' => StreamQuery::matchingAny(), 'expectedResult' => false];
-    }
-
-    /**
-     * @dataProvider dataprovider_matchesNone
-     */
-    public function test_matchesNone(StreamQuery $query, bool $expectedResult): void
-    {
-        if ($expectedResult === true) {
-            self::assertTrue($query->matchesNone());
-        } else {
-            self::assertFalse($query->matchesNone());
         }
     }
 }

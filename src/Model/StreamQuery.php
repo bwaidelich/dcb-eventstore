@@ -18,16 +18,22 @@ final readonly class StreamQuery
     /**
      * Creates an instance that only matches events with the specified {@see DomainIds} _and_ {@see EventTypes}
      */
-    public static function matchingIdsAndTypes(DomainIds $domainIds, EventTypes $eventTypes): self
+    public static function matchingIdsAndTypes(DomainIds|DomainId $domainIds, EventTypes $eventTypes): self
     {
+        if ($domainIds instanceof DomainId) {
+            $domainIds = DomainIds::create($domainIds);
+        }
         return new self($domainIds, $eventTypes);
     }
 
     /**
      * Creates an instance that matches all events with the specified {@see DomainIds}
      */
-    public static function matchingIds(DomainIds $domainIds): self
+    public static function matchingIds(DomainIds|DomainId $domainIds): self
     {
+        if ($domainIds instanceof DomainId) {
+            $domainIds = DomainIds::create($domainIds);
+        }
         return new self($domainIds, null);
     }
 
@@ -39,22 +45,6 @@ final readonly class StreamQuery
         return new self(null, $eventTypes);
     }
 
-    /**
-     * Creates an instance that does not match any event
-     */
-    public static function matchingNone(): self
-    {
-        return new self(DomainIds::none(), EventTypes::none());
-    }
-
-    /**
-     * Creates an instance that matches all events
-     */
-    public static function matchingAny(): self
-    {
-        return new self(null, null);
-    }
-
     public function matches(Event $event): bool
     {
         if ($this->domainIds !== null && !$this->domainIds->intersects($event->domainIds)) {
@@ -64,10 +54,5 @@ final readonly class StreamQuery
             return false;
         }
         return true;
-    }
-
-    public function matchesNone(): bool
-    {
-        return $this->domainIds?->isNone() || $this->types?->isNone();
     }
 }

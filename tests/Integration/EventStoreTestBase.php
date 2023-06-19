@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Tests\Unit;
+namespace Wwwision\DCBEventStore\Tests\Integration;
 
 use InvalidArgumentException;
 use Wwwision\DCBEventStore\EventStore;
@@ -15,16 +15,20 @@ use Wwwision\DCBEventStore\Model\EventId;
 use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\EventType;
 use Wwwision\DCBEventStore\Model\EventTypes;
+use Wwwision\DCBEventStore\Model\ExpectedLastEventId;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
 use Wwwision\DCBEventStore\Model\StreamQuery;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Wwwision\DCBEventStore\Tests\Unit\EventEnvelopeShape;
+use Wwwision\DCBEventStore\Tests\Unit\EventShape;
 use function array_map;
 use function in_array;
+use function range;
 
 /**
- * @phpstan-type EventShape array{id?: string, type?: string, data?: string, domainIds?: array<string, string>}
- * @phpstan-type EventEnvelopeShape array{id?: string, type?: string, data?: string, domainIds?: array<string, string>, sequenceNumber?: int}
+ * @phpstan-type EventShape array{id?: string, type?: string, data?: string, domainIds?: array<array<string, string>>}
+ * @phpstan-type EventEnvelopeShape array{id?: string, type?: string, data?: string, domainIds?: array<array<string, string>>, sequenceNumber?: int}
  */
 #[CoversClass(DomainIds::class)]
 #[CoversClass(EventData::class)]
@@ -37,27 +41,32 @@ use function in_array;
 #[CoversClass(Events::class)]
 #[CoversClass(SequenceNumber::class)]
 #[CoversClass(StreamQuery::class)]
-abstract class EventStoreTestBase  extends TestCase
+abstract class EventStoreTestBase extends TestCase
 {
 
     private ?EventStore $eventStore = null;
 
     abstract protected function createEventStore(): EventStore;
 
-    public function test_events(): void
+    public function test_streamAll_returns_an_empty_stream_if_no_events_were_published(): void
+    {
+        self::assertEventStream($this->getEventStore()->streamAll(), []);
+    }
+
+    public function test_streamAll_returns_all_events(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingAny()), [
-            ['id' => 'id-a', 'data' => 'a', 'type' => 'SomeEventType', 'domainIds' => ['foo' => 'bar', 'baz' => 'foos'], 'sequenceNumber' => 1],
-            ['id' => 'id-b', 'data' => 'b', 'type' => 'SomeOtherEventType', 'domainIds' => ['foo' => 'bar'],'sequenceNumber' => 2],
-            ['id' => 'id-c', 'data' => 'c', 'type' => 'SomeEventType', 'domainIds' => ['foo' => 'bar'],'sequenceNumber' => 3],
-            ['id' => 'id-d', 'data' => 'd', 'type' => 'SomeOtherEventType', 'domainIds' => ['foo' => 'bar', 'baz' => 'foos'],'sequenceNumber' => 4],
-            ['id' => 'id-e', 'data' => 'e', 'type' => 'SomeEventType', 'domainIds' => ['foo' => 'bar', 'baz' => 'foos'],'sequenceNumber' => 5],
-            ['id' => 'id-f', 'data' => 'f', 'type' => 'SomeOtherEventType', 'domainIds' => ['foo' => 'bar', 'baz' => 'foos'],'sequenceNumber' => 6],
+        self::assertEventStream($this->getEventStore()->streamAll(), [
+            ['id' => 'id-a', 'data' => 'a', 'type' => 'SomeEventType', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar']], 'sequenceNumber' => 1],
+            ['id' => 'id-b', 'data' => 'b', 'type' => 'SomeOtherEventType', 'domainIds' => [['foo' => 'bar']],'sequenceNumber' => 2],
+            ['id' => 'id-c', 'data' => 'c', 'type' => 'SomeEventType', 'domainIds' => [['foo' => 'bar']],'sequenceNumber' => 3],
+            ['id' => 'id-d', 'data' => 'd', 'type' => 'SomeOtherEventType', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar']],'sequenceNumber' => 4],
+            ['id' => 'id-e', 'data' => 'e', 'type' => 'SomeEventType', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar']],'sequenceNumber' => 5],
+            ['id' => 'id-f', 'data' => 'f', 'type' => 'SomeOtherEventType', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar']],'sequenceNumber' => 6],
         ]);
     }
 
-    public function test_stream_allows_filtering_of_events_by_domain_ids(): void
+    public function test_stream_allows_filtering_of_events_by_domain_id(): void
     {
         $this->appendDummyEvents();
         self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIds(DomainIds::single('baz', 'foos'),)), [
@@ -65,6 +74,28 @@ abstract class EventStoreTestBase  extends TestCase
             ['data' => 'd'],
             ['data' => 'e'],
             ['data' => 'f'],
+        ]);
+    }
+
+    public function test_stream_allows_filtering_of_events_by_domain_ids(): void
+    {
+        $this->appendEvents([
+            ['id' => 'a', 'domainIds' => [['foo' => 'bar']]],
+            ['id' => 'b', 'domainIds' => [['foo' => 'bar'], ['baz' => 'foos']]],
+            ['id' => 'c', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar']]],
+            ['id' => 'd', 'domainIds' => [['baz' => 'foos']]],
+            ['id' => 'e', 'domainIds' => [['baz' => 'foosnot']]],
+            ['id' => 'f', 'domainIds' => [['foo' => 'bar'], ['baz' => 'notfoos']]],
+            ['id' => 'g', 'domainIds' => [['baz' => 'foos'], ['foo' => 'bar'], ['foos' => 'baz']]],
+            ['id' => 'h', 'domainIds' => [['baz' => 'foosn'], ['foo' => 'notbar'], ['foos' => 'bar']]],
+        ]);
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIds(DomainIds::fromArray([['foo' => 'bar'], ['baz' => 'foos']]),)), [
+            ['id' => 'a'],
+            ['id' => 'b'],
+            ['id' => 'c'],
+            ['id' => 'd'],
+            ['id' => 'f'],
+            ['id' => 'g'],
         ]);
     }
 
@@ -87,26 +118,29 @@ abstract class EventStoreTestBase  extends TestCase
         ]);
     }
 
-    public function test_stream_allows_fetching_all_events(): void
-    {
-        $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingAny()), [
-            ['data' => 'a'],
-            ['data' => 'b'],
-            ['data' => 'c'],
-            ['data' => 'd'],
-            ['data' => 'e'],
-            ['data' => 'f'],
-        ]);
-    }
-
     public function test_stream_allows_fetching_no_events(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingNone()), []);
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIds(DomainIds::single('non-existing', 'id'))), []);
     }
 
-    public function test_append_fails_if_new_events_match_the_specified_query(): void
+    public function test_conditionalAppend_appends_event_if_expectedLastEventId_matches(): void
+    {
+        $this->appendDummyEvents();
+
+        $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
+        $stream = $this->getEventStore()->stream($query);
+        $lastEventId = $stream->last()->event->id;
+        $this->conditionalAppendEvent(['type' => 'SomeEventType', 'data' => 'new event', 'domainIds' => [['baz' => 'foos']]], $query, ExpectedLastEventId::fromEventId($lastEventId));
+
+        self::assertEventStream($this->getEventStore()->stream(StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'))), [
+            ['data' => 'a'],
+            ['data' => 'e'],
+            ['data' => 'new event'],
+        ]);
+    }
+
+    public function test_conditionalAppend_fails_if_new_events_match_the_specified_query(): void
     {
         $this->appendDummyEvents();
 
@@ -114,28 +148,28 @@ abstract class EventStoreTestBase  extends TestCase
         $stream = $this->getEventStore()->stream($query);
         $lastEventId = $stream->last()->event->id;
 
-        $this->appendEvent(['type' => 'SomeEventType', 'domainIds' => ['baz' => 'foos']]);
+        $this->appendEvent(['type' => 'SomeEventType', 'domainIds' => [['baz' => 'foos']]]);
 
         $this->expectException(ConditionalAppendFailed::class);
-        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, $lastEventId);
+        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedLastEventId::fromEventId($lastEventId));
     }
 
-    public function test_append_fails_if_no_last_event_id_was_expected_but_query_matches_events(): void
+    public function test_conditionalAppend_fails_if_no_last_event_id_was_expected_but_query_matches_events(): void
     {
         $this->appendDummyEvents();
 
         $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventType'));
 
         $this->expectException(ConditionalAppendFailed::class);
-        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, null);
+        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedLastEventId::none());
     }
 
-    public function test_append_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
+    public function test_conditionalAppend_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
     {
         $query = StreamQuery::matchingIdsAndTypes(DomainIds::single('baz', 'foos'), EventTypes::single('SomeEventTypeThatDidNotOccur'));
 
         $this->expectException(ConditionalAppendFailed::class);
-        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, EventId::create());
+        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedLastEventId::fromString('some-expected-id'));
     }
 
     // --- Helpers ---
@@ -146,7 +180,7 @@ abstract class EventStoreTestBase  extends TestCase
             'id' => 'id-' . $char,
             'data' => $char,
             'type' => in_array($char, ['a', 'c', 'e'], true) ? 'SomeEventType' : 'SomeOtherEventType',
-            'domainIds' => in_array($char, ['b', 'c'], true) ? ['foo' => 'bar'] : ['foo' => 'bar', 'baz' => 'foos'],
+            'domainIds' => in_array($char, ['b', 'c'], true) ? [['foo' => 'bar']] : [['foo' => 'bar'], ['baz' => 'foos']],
         ], range('a', 'f')));
     }
 
@@ -163,23 +197,23 @@ abstract class EventStoreTestBase  extends TestCase
      */
     final protected function appendEvents(array $events): void
     {
-        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), StreamQuery::matchingNone(), null);
+        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)));
     }
 
     /**
      * @phpstan-param EventShape $event
      */
-    final protected function conditionalAppendEvents(array $events, StreamQuery $query, ?EventId $lastEventId): void
+    final protected function conditionalAppendEvents(array $events, StreamQuery $query, ExpectedLastEventId $expectedLastEventId): void
     {
-        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), $query, $lastEventId);
+        $this->getEventStore()->conditionalAppend(Events::fromArray(array_map(self::arrayToEvent(...), $events)), $query, $expectedLastEventId);
     }
 
     /**
      * @phpstan-param EventShape $event
      */
-    final protected function conditionalAppendEvent(array $event, StreamQuery $query, ?EventId $lastEventId): void
+    final protected function conditionalAppendEvent(array $event, StreamQuery $query, ExpectedLastEventId $expectedLastEventId): void
     {
-        $this->conditionalAppendEvents([$event], $query, $lastEventId);
+        $this->conditionalAppendEvents([$event], $query, $expectedLastEventId);
     }
 
     /**
@@ -203,7 +237,7 @@ abstract class EventStoreTestBase  extends TestCase
     {
         if ($this->eventStore === null) {
             $this->eventStore = $this->createEventStore();
-            $this->eventStore->setup();
+            //$this->eventStore->setup();
         }
         return $this->eventStore;
     }
@@ -241,7 +275,7 @@ abstract class EventStoreTestBase  extends TestCase
             isset($event['id']) ? EventId::fromString($event['id']) : EventId::create(),
             EventType::fromString($event['type'] ?? 'SomeEventType'),
             EventData::fromString($event['data'] ?? ''),
-            DomainIds::fromArray($event['domainIds'] ?? []),
+            DomainIds::fromArray($event['domainIds'] ?? [['foo' => 'bar']]),
         );
     }
 }

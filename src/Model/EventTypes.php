@@ -7,6 +7,7 @@ namespace Wwwision\DCBEventStore\Model;
 use ArrayIterator;
 use IteratorAggregate;
 use Traversable;
+use Webmozart\Assert\Assert;
 
 use function array_map;
 
@@ -23,17 +24,12 @@ final class EventTypes implements IteratorAggregate
     private function __construct(
         public readonly array $types,
     ) {
-        //Assert::notEmpty($this->types, 'EventTypes must not be empty');
+        Assert::notEmpty($this->types, 'EventTypes must not be empty');
     }
 
     public static function create(EventType ...$types): self
     {
         return new self($types);
-    }
-
-    public static function none(): self
-    {
-        return new self([]);
     }
 
     public static function fromStrings(string ...$types): self
@@ -78,10 +74,5 @@ final class EventTypes implements IteratorAggregate
             return $this;
         }
         return new self(array_merge($this->types, $other->types));
-    }
-
-    public function isNone(): bool
-    {
-        return $this->types === [];
     }
 }

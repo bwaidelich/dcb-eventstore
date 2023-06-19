@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Helper;
 
 use Wwwision\DCBEventStore\EventStore;
+use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exception\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Model\EventEnvelope;
-use Wwwision\DCBEventStore\Model\EventId;
 use Wwwision\DCBEventStore\Model\Events;
+use Wwwision\DCBEventStore\Model\ExpectedLastEventId;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
 use Wwwision\DCBEventStore\Model\StreamQuery;
 
@@ -16,6 +17,8 @@ use function count;
 
 /**
  * An in-memory implementation of the {@see EventStore} interface that mostly serves testing or debugging purposes
+ *
+ * NOTE: This implementation is not transaction-safe (and obviously not thread-safe), it should never be used in productive code!
  *
  * Usage:
  * $eventStore = InMemoryEventStore::create();
@@ -44,26 +47,33 @@ final class InMemoryEventStore implements EventStore
         // In-memory event store does not need any setup
     }
 
+    public function streamAll(): EventStream
+    {
+        return InMemoryEventStream::create(...$this->eventEnvelopes);
+    }
+
     public function stream(StreamQuery $query): InMemoryEventStream
     {
-        if ($query->matchesNone()) {
-            return InMemoryEventStream::empty();
-        }
         return InMemoryEventStream::create(...array_filter($this->eventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $query->matches($eventEnvelope->event)));
     }
 
-    public function append(Events $events, StreamQuery $query, ?EventId $lastEventId): void
+    public function conditionalAppend(Events $events, StreamQuery $query, ExpectedLastEventId $expectedLastEventId): void
     {
         $lastEvent = $this->stream($query)->last();
         if ($lastEvent === null) {
-            if ($lastEventId !== null) {
+            if (!$expectedLastEventId->isNone()) {
                 throw ConditionalAppendFailed::becauseNoEventMatchedTheQuery();
             }
-        } elseif ($lastEventId === null) {
+        } elseif ($expectedLastEventId->isNone()) {
             throw ConditionalAppendFailed::becauseNoEventWhereExpected();
-        } elseif (!$lastEvent->event->id->equals($lastEventId)) {
-            throw ConditionalAppendFailed::becauseEventIdsDontMatch($lastEventId, $lastEvent->event->id);
+        } elseif (!$expectedLastEventId->matches($lastEvent->event->id)) {
+            throw ConditionalAppendFailed::becauseEventIdsDontMatch($expectedLastEventId, $lastEvent->event->id);
         }
+        $this->append($events);
+    }
+
+    public function append(Events $events): void
+    {
         $sequenceNumber = SequenceNumber::fromInteger(count($this->eventEnvelopes));
         foreach ($events as $event) {
             $sequenceNumber = $sequenceNumber->next();

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Tests\Unit\Helper;
+namespace Wwwision\DCBEventStore\Tests\Integration\Helper;
 
 use Wwwision\DCBEventStore\Exception\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Model\DomainIds;
@@ -12,9 +12,10 @@ use Wwwision\DCBEventStore\Model\EventId;
 use Wwwision\DCBEventStore\Model\Events;
 use Wwwision\DCBEventStore\Model\EventType;
 use Wwwision\DCBEventStore\Model\EventTypes;
+use Wwwision\DCBEventStore\Model\ExpectedLastEventId;
 use Wwwision\DCBEventStore\Model\SequenceNumber;
 use Wwwision\DCBEventStore\Model\StreamQuery;
-use Wwwision\DCBEventStore\Tests\Unit\EventStoreTestBase;
+use Wwwision\DCBEventStore\Tests\Integration\EventStoreTestBase;
 use Wwwision\DCBEventStore\Helper\InMemoryEventStore;
 use Wwwision\DCBEventStore\Helper\InMemoryEventStream;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -25,6 +26,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(EventData::class)]
 #[CoversClass(ConditionalAppendFailed::class)]
 #[CoversClass(EventEnvelope::class)]
+#[CoversClass(ExpectedLastEventId::class)]
 #[CoversClass(EventId::class)]
 #[CoversClass(EventType::class)]
 #[CoversClass(EventTypes::class)]
