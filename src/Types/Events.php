@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Model;
+namespace Wwwision\DCBEventStore\Types;
 
 use ArrayIterator;
 use Closure;
@@ -30,9 +30,9 @@ final readonly class Events implements IteratorAggregate, JsonSerializable, Coun
         $this->events = $events;
     }
 
-    public static function single(EventId $id, EventType $type, EventData $data, DomainIds $domainIds): self
+    public static function single(EventId $id, EventType $type, EventData $data, Tags $tags): self
     {
-        return new self(new Event($id, $type, $data, $domainIds));
+        return new self(new Event($id, $type, $data, $tags));
     }
 
     /**
@@ -54,6 +54,7 @@ final readonly class Events implements IteratorAggregate, JsonSerializable, Coun
     }
 
     /**
+     * @param Closure(Event $event): mixed $callback
      * @return array<string, mixed>
      */
     public function map(Closure $callback): array

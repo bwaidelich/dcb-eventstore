@@ -2,21 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Model;
+namespace Wwwision\DCBEventStore\Types;
 
 use ArrayIterator;
 use IteratorAggregate;
+use JsonSerializable;
 use Traversable;
 use Webmozart\Assert\Assert;
 
 use function array_map;
+use function array_values;
 
 /**
  * A type-safe set of {@see EventType} instances
  *
  * @implements IteratorAggregate<EventType>
  */
-final class EventTypes implements IteratorAggregate
+final class EventTypes implements IteratorAggregate, JsonSerializable
 {
     /**
      * @param EventType[] $types
@@ -45,7 +47,7 @@ final class EventTypes implements IteratorAggregate
         return self::create($type);
     }
 
-    public function contains(EventType $type): bool
+    public function contain(EventType $type): bool
     {
         foreach ($this->types as $typesInSet) {
             if ($typesInSet->value === $type->value) {
@@ -74,5 +76,13 @@ final class EventTypes implements IteratorAggregate
             return $this;
         }
         return new self(array_merge($this->types, $other->types));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return array_values($this->types);
     }
 }

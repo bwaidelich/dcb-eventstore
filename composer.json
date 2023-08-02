@@ -22,6 +22,7 @@
   "require": {
     "php": ">=8.2",
     "ramsey/uuid": "^4.7",
+    "psr/clock": "^1",
     "webmozart/assert": "^1.11"
   },
   "require-dev": {

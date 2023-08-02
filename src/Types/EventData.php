@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Model;
+namespace Wwwision\DCBEventStore\Types;
 
 use JsonSerializable;
 
 /**
- * String-based data of an event (usually the JSON-encoded payload of a {@see DomainEvent})
+ * String-based data of an event (usually the JSON-encoded payload of a domain event
  */
 final readonly class EventData implements JsonSerializable
 {

@@ -2,25 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Model;
+namespace Wwwision\DCBEventStore\Types;
 
 use JsonSerializable;
-use Ramsey\Uuid\Uuid;
 use Webmozart\Assert\Assert;
 
 /**
- * Globally unique identifier of an event (usually formatted as UUID v4)
+ * The type of an event, e.g. "CustomerRenamed"
  */
-final readonly class EventId implements JsonSerializable
+final readonly class EventType implements JsonSerializable
 {
     private function __construct(public string $value)
     {
         Assert::notEmpty($this->value);
-    }
-
-    public static function create(): self
-    {
-        return new self(Uuid::uuid4()->toString());
     }
 
     public static function fromString(string $value): self
@@ -30,7 +24,7 @@ final readonly class EventId implements JsonSerializable
 
     public function equals(self $other): bool
     {
-        return $this->value === $other->value;
+        return $other->value === $this->value;
     }
 
     public function jsonSerialize(): string
