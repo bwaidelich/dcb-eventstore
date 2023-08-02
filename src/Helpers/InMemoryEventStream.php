@@ -43,6 +43,6 @@ final readonly class InMemoryEventStream implements EventStream
 
     public function first(): ?EventEnvelope
     {
-        return $this->eventEnvelopes[array_key_first($this->eventEnvelopes)] ?? null;
+        return null;
     }
 }
