@@ -26,3 +26,5 @@ Contributions in the form of [issues](https://github.com/bwaidelich/dcb-eventsto
 ## License
 
 See [LICENSE](./LICENSE)
+
+CI Test
