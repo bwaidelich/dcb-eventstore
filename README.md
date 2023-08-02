@@ -14,3 +14,15 @@ Install via [composer](https://getcomposer.org):
 ```shell
 composer require wwwision/dcb-eventstore
 ```
+
+## Specification
+
+See [Specification.md](Specification.md) (work in progress)
+
+## Contribution
+
+Contributions in the form of [issues](https://github.com/bwaidelich/dcb-eventstore/issues), [pull requests](https://github.com/bwaidelich/dcb-eventstore/pulls) or [discussions](https://github.com/bwaidelich/dcb-eventstore/discussions) are highly appreciated
+
+## License
+
+See [LICENSE](./LICENSE)
