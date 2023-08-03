@@ -7,13 +7,13 @@ namespace Wwwision\DCBEventStore\Types;
 /**
  * The raw low-level event that is stored in the Events Store
  */
-final readonly class Event
+final class Event
 {
     public function __construct(
-        public EventId $id, // required for deduplication
-        public EventType $type,
-        public EventData $data, // opaque, no size limit?
-        public Tags $tags,
+        public readonly EventId $id, // required for deduplication
+        public readonly EventType $type,
+        public readonly EventData $data, // opaque, no size limit?
+        public readonly Tags $tags,
         // add metadata ?
     ) {
     }

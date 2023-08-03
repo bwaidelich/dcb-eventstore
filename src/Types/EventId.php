@@ -11,9 +11,9 @@ use Webmozart\Assert\Assert;
 /**
  * Globally unique identifier of an event (usually formatted as UUID v4)
  */
-final readonly class EventId implements JsonSerializable
+final class EventId implements JsonSerializable
 {
-    private function __construct(public string $value)
+    private function __construct(public readonly string $value)
     {
         Assert::notEmpty($this->value);
     }

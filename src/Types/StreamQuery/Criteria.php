@@ -17,12 +17,12 @@ use function array_map;
  *
  * @implements IteratorAggregate<Criterion>
  */
-final readonly class Criteria implements IteratorAggregate, JsonSerializable
+final class Criteria implements IteratorAggregate, JsonSerializable
 {
     /**
      * @var Criterion[]
      */
-    private array $criteria;
+    private readonly array $criteria;
 
     private function __construct(Criterion ...$criteria)
     {

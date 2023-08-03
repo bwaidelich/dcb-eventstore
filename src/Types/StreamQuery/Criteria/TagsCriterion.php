@@ -8,10 +8,10 @@ use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\Tags;
 
-final readonly class TagsCriterion implements Criterion
+final class TagsCriterion implements Criterion
 {
     public function __construct(
-        public Tags $tags,
+        public readonly Tags $tags,
     ) {
     }
 

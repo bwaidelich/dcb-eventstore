@@ -21,12 +21,12 @@ use function json_decode;
  *
  * @implements IteratorAggregate<Tag>
  */
-final readonly class Tags implements IteratorAggregate, JsonSerializable
+final class Tags implements IteratorAggregate, JsonSerializable
 {
     /**
      * @param array<string, Tag> $tags
      */
-    private function __construct(private array $tags)
+    private function __construct(private readonly array $tags)
     {
         Assert::notEmpty($this->tags, 'Tags must not be empty');
     }

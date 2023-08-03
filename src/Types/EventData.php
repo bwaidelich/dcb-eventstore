@@ -9,7 +9,7 @@ use JsonSerializable;
 /**
  * String-based data of an event (usually the JSON-encoded payload of a domain event
  */
-final readonly class EventData implements JsonSerializable
+final class EventData implements JsonSerializable
 {
     private function __construct(
         public readonly string $value,

@@ -18,12 +18,12 @@ use function array_map;
  *
  * @implements IteratorAggregate<Event>
  */
-final readonly class Events implements IteratorAggregate, JsonSerializable, Countable
+final class Events implements IteratorAggregate, JsonSerializable, Countable
 {
     /**
      * @var Event[]
      */
-    private array $events;
+    private readonly array $events;
 
     private function __construct(Event ...$events)
     {
