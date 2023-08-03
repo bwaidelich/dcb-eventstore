@@ -11,12 +11,12 @@ use DateTimeImmutable;
  *
  *
  */
-final readonly class EventEnvelope
+final class EventEnvelope
 {
     public function __construct(
-        public SequenceNumber $sequenceNumber,
+        public readonly SequenceNumber $sequenceNumber,
         //public DateTimeImmutable $recordedAt, // do we need it
-        public Event $event,
+        public readonly Event $event,
     ) {
     }
 }

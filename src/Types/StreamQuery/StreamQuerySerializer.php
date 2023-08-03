@@ -23,8 +23,12 @@ use function substr;
 
 use const JSON_PRETTY_PRINT;
 
-final readonly class StreamQuerySerializer
+final class StreamQuerySerializer
 {
+    private function __construct()
+    {
+    }
+
     public static function serialize(StreamQuery $streamQuery): string
     {
         $array = [

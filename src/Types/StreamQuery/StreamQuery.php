@@ -11,12 +11,12 @@ use Wwwision\DCBEventStore\Types\EventTypes;
 /**
  * A Query describing events by their {@see Tags} and/or {@see EventTypes}
  */
-final readonly class StreamQuery
+final class StreamQuery
 {
     public const VERSION = '1.0';
 
     private function __construct(
-        public Criteria $criteria,
+        public readonly Criteria $criteria,
     ) {
     }
 

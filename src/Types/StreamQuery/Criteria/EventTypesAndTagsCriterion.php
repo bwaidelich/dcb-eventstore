@@ -9,11 +9,11 @@ use Wwwision\DCBEventStore\Types\EventTypes;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\Tags;
 
-final readonly class EventTypesAndTagsCriterion implements Criterion
+final class EventTypesAndTagsCriterion implements Criterion
 {
     public function __construct(
-        public EventTypes $eventTypes,
-        public Tags $tags,
+        public readonly EventTypes $eventTypes,
+        public readonly Tags $tags,
     ) {
     }
 

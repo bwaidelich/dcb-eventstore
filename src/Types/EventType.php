@@ -10,9 +10,9 @@ use Webmozart\Assert\Assert;
 /**
  * The type of an event, e.g. "CustomerRenamed"
  */
-final readonly class EventType implements JsonSerializable
+final class EventType implements JsonSerializable
 {
-    private function __construct(public string $value)
+    private function __construct(public readonly string $value)
     {
         Assert::notEmpty($this->value);
     }

@@ -10,11 +10,11 @@ use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 /**
  * Condition for {@see EventStore::append()}
  */
-final readonly class AppendCondition
+final class AppendCondition
 {
     public function __construct(
-        public StreamQuery $query,
-        public ExpectedHighestSequenceNumber $expectedHighestSequenceNumber,
+        public readonly StreamQuery $query,
+        public readonly ExpectedHighestSequenceNumber $expectedHighestSequenceNumber,
     ) {
     }
 

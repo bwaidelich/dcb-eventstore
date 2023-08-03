@@ -12,9 +12,9 @@ use Wwwision\DCBEventStore\EventStore;
  * Note: {@see ExpectedHighestSequenceNumber::none()} is a special case that means that _no_ event must match the specified query
  * Note: {@see ExpectedHighestSequenceNumber::any()} is a special case that means that the events are appended without conditions
  */
-final readonly class ExpectedHighestSequenceNumber
+final class ExpectedHighestSequenceNumber
 {
-    private function __construct(private SequenceNumber|StreamState $sequenceNumber,)
+    private function __construct(private readonly SequenceNumber|StreamState $sequenceNumber)
     {
     }
 

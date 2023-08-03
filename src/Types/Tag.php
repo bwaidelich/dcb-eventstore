@@ -12,11 +12,11 @@ use function explode;
 /**
  * Tag that can be attached to an {@see Event}, usually containing some identifier for an entity or concept of the core domain
  */
-final readonly class Tag implements JsonSerializable
+final class Tag implements JsonSerializable
 {
     private function __construct(
-        public string $key,
-        public string $value,
+        public readonly string $key,
+        public readonly string $value,
     ) {
         Assert::regex($key, '/^[[:alnum:]\-\_]{1,50}$/', 'tag keys must only alphanumeric characters, underscores and dashes and must be between 1 and 50 characters long, given: %s');
         Assert::regex($value, '/^[[:alnum:]\-\_]{1,50}$/', 'tag values must only alphanumeric characters, underscores and dashes and must be between 1 and 50 characters long, given: %s');

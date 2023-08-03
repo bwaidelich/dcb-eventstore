@@ -8,10 +8,10 @@ use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventTypes;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 
-final readonly class EventTypesCriterion implements Criterion
+final class EventTypesCriterion implements Criterion
 {
     public function __construct(
-        public EventTypes $eventTypes,
+        public readonly EventTypes $eventTypes,
     ) {
     }
 

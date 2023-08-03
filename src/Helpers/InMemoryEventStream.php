@@ -14,13 +14,13 @@ use Wwwision\DCBEventStore\Types\EventEnvelope;
  * Usage:
  * $eventStream = InMemoryEventStream::create($event1 ,$event2);
  */
-final readonly class InMemoryEventStream implements EventStream
+final class InMemoryEventStream implements EventStream
 {
     /**
      * @param EventEnvelope[] $eventEnvelopes
      */
     private function __construct(
-        private array $eventEnvelopes,
+        private readonly array $eventEnvelopes,
     ) {
     }
 
