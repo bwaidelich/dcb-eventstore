@@ -17,6 +17,6 @@ final readonly class TagsCriterion implements Criterion
 
     public function matches(Event $event): bool
     {
-        return $this->tags->intersect($event->tags);
+        return $event->tags->containEvery($this->tags);
     }
 }

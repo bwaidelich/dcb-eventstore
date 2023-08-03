@@ -32,7 +32,9 @@ final class StreamQueryTest extends TestCase
         yield 'different tag' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::single('foo', 'not_bar')))), 'event' => $event];
         yield 'different event type' => ['query' => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::single('SomeOtherEventType')))), 'event' => $event];
         yield 'matching event type, different tag value' => ['query' => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::single('SomeEventType'), Tags::single('foo', 'not_bar')))), 'event' => $event];
+        yield 'matching all tags plus additional tags' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::fromArray(['foo:bar', 'bar:baz', 'foos:bars'])))), 'event' => $event];
 
+        yield 'partially matching tags' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::fromArray(['foo:bar', 'bar:not_baz'])))), 'event' => $event];
         yield 'matching tag, different event type' => ['query' => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::single('Event4'), Tags::fromArray(['key2:value1', 'key1:value3'])))), 'event' => new Event(EventId::create(), EventType::fromString('Event3'), EventData::fromString(''), Tags::single('key2', 'value1'))];
     }
 
@@ -51,8 +53,6 @@ final class StreamQueryTest extends TestCase
         $event = new Event(EventId::create(), $eventType, EventData::fromString(''), $tags);
 
         yield 'matching tag type and value' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::single('foo', 'bar')))), 'event' => $event];
-        yield 'partially matching tags' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::fromArray(['foo:bar', 'bar:not_baz'])))), 'event' => $event];
-        yield 'matching all tags plus additional tags' => ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::fromArray(['foo:bar', 'bar:baz', 'foos:bars'])))), 'event' => $event];
         yield 'matching event type' => ['query' => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::single('SomeEventType')))), 'event' => $event];
         yield 'matching one of two event types' => ['query' => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::create(EventType::fromString('SomeOtherEventType'), EventType::fromString('SomeEventType'))))), 'event' => $event];
         yield 'matching event type and tag' => ['query' => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::single('SomeEventType'), Tags::single('foo', 'bar')))), 'event' => $event];

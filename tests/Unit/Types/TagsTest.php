@@ -151,6 +151,14 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['bar:baz', 'bar:not_baz', 'foo:bar'], $ids1->merge($ids2));
     }
 
+    public function test_merge_removes_duplicates(): void
+    {
+        $ids1 = Tags::fromArray(['foo:bar', 'bar:baz']);
+        $ids2 = Tags::fromArray(['bar:not_baz', 'foo:bar']);
+
+        self::assertTagsMatch(['bar:baz', 'bar:not_baz', 'foo:bar'], $ids1->merge($ids2));
+    }
+
     public function test_merge_returns_same_instance_if_values_are_equal(): void
     {
         $ids1 = Tags::create(Tag::create('foo', 'bar'));

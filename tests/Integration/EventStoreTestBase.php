@@ -101,7 +101,7 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
-    public function test_read_allows_filtering_of_events_by_tags(): void
+    public function test_read_allows_filtering_of_events_by_tags_disjunction(): void
     {
         $this->appendEvents([
             ['id' => 'a', 'tags' => ['foo:bar']],
@@ -120,6 +120,26 @@ abstract class EventStoreTestBase extends TestCase
             ['id' => 'c'],
             ['id' => 'd'],
             ['id' => 'f'],
+            ['id' => 'g'],
+        ]);
+    }
+
+    public function test_read_allows_filtering_of_events_by_tags_conjunction(): void
+    {
+        $this->appendEvents([
+            ['id' => 'a', 'tags' => ['foo:bar']],
+            ['id' => 'b', 'tags' => ['foo:bar', 'baz:foos']],
+            ['id' => 'c', 'tags' => ['baz:foos', 'foo:bar']],
+            ['id' => 'd', 'tags' => ['baz:foos']],
+            ['id' => 'e', 'tags' => ['baz:foosnot']],
+            ['id' => 'f', 'tags' => ['foo:bar', 'baz:notfoos']],
+            ['id' => 'g', 'tags' => ['baz:foos', 'foo:bar', 'foos:baz']],
+            ['id' => 'h', 'tags' => ['baz:foosn', 'foo:notbar', 'foos:bar']],
+        ]);
+        $query = StreamQuery::create(Criteria::create(new TagsCriterion(Tags::fromArray(['foo:bar', 'baz:foos']))));
+        self::assertEventStream($this->stream($query), [
+            ['id' => 'b'],
+            ['id' => 'c'],
             ['id' => 'g'],
         ]);
     }

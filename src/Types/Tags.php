@@ -12,6 +12,7 @@ use JsonSerializable;
 use Traversable;
 use Webmozart\Assert\Assert;
 
+use function array_key_exists;
 use function array_merge;
 use function json_decode;
 
@@ -84,6 +85,16 @@ final readonly class Tags implements IteratorAggregate, JsonSerializable
     public function contain(Tag $tag): bool
     {
         return array_key_exists($tag->toString(), $this->tags);
+    }
+
+    public function containEvery(Tags $tags): bool
+    {
+        foreach ($tags as $tag) {
+            if (!$this->contain($tag)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public function intersect(self|Tag $other): bool

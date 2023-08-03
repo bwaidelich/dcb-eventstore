@@ -19,6 +19,6 @@ final readonly class EventTypesAndTagsCriterion implements Criterion
 
     public function matches(Event $event): bool
     {
-        return $this->eventTypes->contain($event->type) && $this->tags->intersect($event->tags);
+        return $this->eventTypes->contain($event->type) && $event->tags->containEvery($this->tags);
     }
 }

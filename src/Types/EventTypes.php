@@ -10,8 +10,9 @@ use JsonSerializable;
 use Traversable;
 use Webmozart\Assert\Assert;
 
-use function array_map;
+use function array_key_exists;
 use function array_values;
+use function ksort;
 
 /**
  * A type-safe set of {@see EventType} instances
@@ -21,7 +22,7 @@ use function array_values;
 final class EventTypes implements IteratorAggregate, JsonSerializable
 {
     /**
-     * @param EventType[] $types
+     * @param array<string, EventType> $types
      */
     private function __construct(
         public readonly array $types,
@@ -29,32 +30,41 @@ final class EventTypes implements IteratorAggregate, JsonSerializable
         Assert::notEmpty($this->types, 'EventTypes must not be empty');
     }
 
+    /**
+     * @param array<mixed> $types
+     */
+    public static function fromArray(array $types): self
+    {
+        $convertedEventTypes = [];
+        foreach ($types as $eventType) {
+            if (!$eventType instanceof EventType) {
+                Assert::string($eventType);
+                $eventType = EventType::fromString($eventType);
+            }
+            $convertedEventTypes[$eventType->value] = $eventType;
+        }
+        ksort($convertedEventTypes);
+        return new self($convertedEventTypes);
+    }
+
     public static function create(EventType ...$types): self
     {
-        return new self($types);
+        return self::fromArray($types);
     }
 
     public static function fromStrings(string ...$types): self
     {
-        return new self(array_map(static fn (string $type) => EventType::fromString($type), $types));
+        return self::fromArray($types);
     }
 
     public static function single(string|EventType $type): self
     {
-        if (is_string($type)) {
-            $type = EventType::fromString($type);
-        }
-        return self::create($type);
+        return self::fromArray([$type]);
     }
 
     public function contain(EventType $type): bool
     {
-        foreach ($this->types as $typesInSet) {
-            if ($typesInSet->value === $type->value) {
-                return true;
-            }
-        }
-        return false;
+        return array_key_exists($type->value, $this->types);
     }
 
     /**
@@ -62,7 +72,7 @@ final class EventTypes implements IteratorAggregate, JsonSerializable
      */
     public function toStringArray(): array
     {
-        return array_map(static fn (EventType $type) => $type->value, $this->types);
+        return array_keys($this->types);
     }
 
     public function getIterator(): Traversable
@@ -75,7 +85,7 @@ final class EventTypes implements IteratorAggregate, JsonSerializable
         if ($this->types === $other->types) {
             return $this;
         }
-        return new self(array_merge($this->types, $other->types));
+        return self::fromArray(array_merge($this->types, $other->types));
     }
 
     /**
