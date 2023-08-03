@@ -28,8 +28,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use function array_keys;
 use function array_map;
-use function get_debug_type;
-use function getenv;
 use function in_array;
 use function range;
 

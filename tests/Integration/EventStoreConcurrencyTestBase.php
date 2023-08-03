@@ -7,7 +7,6 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use Random\Randomizer;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
@@ -37,6 +36,7 @@ use function json_encode;
 use function min;
 use function random_int;
 use function range;
+use function shuffle;
 use function sprintf;
 use const JSON_THROW_ON_ERROR;
 
@@ -165,10 +165,9 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
      */
     private static function some(int $max, ...$choices): array
     {
-        $randomizer = new Randomizer();
         $amount = self::between(1, min($max, count($choices)));
-        $shuffledChoices = $randomizer->shuffleArray($choices);
-        return array_slice($shuffledChoices, 0, $amount);
+        shuffle($choices);
+        return array_slice($choices, 0, $amount);
     }
 
     private static function between(int $min, int $max): int
