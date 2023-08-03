@@ -68,12 +68,13 @@ In v1 the only supported criteria types are:
 
 ## SequenceNumber
 
-When an [Event](#Eventd) is appended to the [EventStore](#EventStore) a `SequenceNumber` is assigned to it.
+When an [Event](#Event) is appended to the [EventStore](#EventStore) a `SequenceNumber` is assigned to it.
 
 It...
 * _MUST_ be unique for one EventStore
-* _MUST_ be monotonic increasing by `1`
+* _MUST_ be monotonic increasing
 * _MUST_ have an allowed minimum value of `1`
+* _CAN_ contain gaps
 * _SHOULD_ have a reasonably high maximum value (depending on programming language and environment)
 
 
@@ -84,7 +85,7 @@ When reading from the [EventStore](#EventStore) an `EventStream` is returned.
 It...
 * It _MUST_ be iterable
 * It _MUST_ return an [EventEnvelope](#EventEnvelope) for every iteration
-* It _MUST_ include new events if they occur during iteration (i.e. it should be a stream, not a fixed set)
+* It _CAN_ include new events if they occur during iteration
 * Individual [EventEnvelope](#EventEnvelope) instances _MAY_ be converted during iteration for performance optimization
 * Batches of events _MAY_ be loaded from the underlying storage at once for performance optimization
 
@@ -165,8 +166,8 @@ A `Tag` can add domain specific metadata (usually the ids of an entity or concep
 
 **NOTE:** If the `value` is not specified, all tags of the given `key` will match (wildcard)
 
-* It _MUST_ contain a `key` that satisfies the regular expression `^[[:alnum:]\-\_]{1,50}$`
-* It _CAN_ contain a `value` that satisfies the regular expression `^[[:alnum:]\-\_]{1,50}$`
+* It _MUST_ contain a `key` that satisfies the regular expression `^[a-zA-Z0-9\-\_]{1,50}$`
+* It _CAN_ contain a `value` that satisfies the regular expression `^[a-zA-Z0-9\-\_]{1,50}$`
 
 ## AppendCondition
 
