@@ -14,7 +14,7 @@ final class Event
         public readonly EventType $type,
         public readonly EventData $data, // opaque, no size limit?
         public readonly Tags $tags,
-        // add metadata ?
+        public readonly EventMetadata $metadata,
     ) {
     }
 }

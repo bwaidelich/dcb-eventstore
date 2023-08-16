@@ -8,6 +8,7 @@ use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
+use Wwwision\DCBEventStore\Types\EventMetadata;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
@@ -398,6 +399,7 @@ abstract class EventStoreTestBase extends TestCase
             EventType::fromString($event['type'] ?? 'SomeEventType'),
             EventData::fromString($event['data'] ?? ''),
             Tags::fromArray($event['tags'] ?? ['foo:bar']),
+            EventMetadata::fromArray($event['metadata'] ?? ['foo' => 'bar']),
         );
     }
 }

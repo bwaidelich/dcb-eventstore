@@ -30,9 +30,9 @@ final class Events implements IteratorAggregate, JsonSerializable, Countable
         $this->events = $events;
     }
 
-    public static function single(EventId $id, EventType $type, EventData $data, Tags $tags): self
+    public static function single(EventId $id, EventType $type, EventData $data, Tags $tags, EventMetadata $metadata): self
     {
-        return new self(new Event($id, $type, $data, $tags));
+        return new self(new Event($id, $type, $data, $tags, $metadata));
     }
 
     /**
