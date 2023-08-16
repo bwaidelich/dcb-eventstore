@@ -13,6 +13,7 @@ use function json_encode;
 use const JSON_THROW_ON_ERROR;
 
 #[CoversClass(Tags::class)]
+#[CoversClass(Tag::class)]
 final class TagsTest extends TestCase
 {
 

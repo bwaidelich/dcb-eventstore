@@ -8,14 +8,12 @@ use DateTimeImmutable;
 
 /**
  * An {@see Event} with its global {@see SequenceNumber} in the Events Store
- *
- *
  */
 final class EventEnvelope
 {
     public function __construct(
         public readonly SequenceNumber $sequenceNumber,
-        //public DateTimeImmutable $recordedAt, // do we need it
+        public DateTimeImmutable $recordedAt,
         public readonly Event $event,
     ) {
     }

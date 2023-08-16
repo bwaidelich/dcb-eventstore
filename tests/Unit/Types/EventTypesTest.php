@@ -10,6 +10,7 @@ use Wwwision\DCBEventStore\Types\EventType;
 use Wwwision\DCBEventStore\Types\EventTypes;
 
 #[CoversClass(EventTypes::class)]
+#[CoversClass(EventType::class)]
 final class EventTypesTest extends TestCase
 {
 

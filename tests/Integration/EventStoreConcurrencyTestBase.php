@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
+use Wwwision\DCBEventStore\Types\EventMetadata;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
@@ -89,7 +90,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             for ($i = 0; $i < $numberOfEvents; $i++) {
                 $descriptor = $process . '(' . getmypid() . ') ' . $eventBatch . '.' . ($i + 1) . '/' . $numberOfEvents;
                 $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => StreamQuerySerializer::serialize($query), 'expectedHighestSequenceNumber' => $expectedHighestSequenceNumber->isNone() ? null : $expectedHighestSequenceNumber->extractSequenceNumber()->value, 'descriptor' => $descriptor];
-                $events[] = new Event(EventId::create(), self::either(...$eventTypes), EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), Tags::create(...self::some($numberOfTags, ...$tags)));
+                $events[] = new Event(EventId::create(), self::either(...$eventTypes), EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), Tags::create(...self::some($numberOfTags, ...$tags)), EventMetadata::none());
             }
             try {
                 static::createEventStore()->append(Events::fromArray($events), new AppendCondition($query, $expectedHighestSequenceNumber));

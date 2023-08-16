@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Helpers;
 
+use DateTimeImmutable;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
@@ -84,6 +85,7 @@ final class InMemoryEventStore implements EventStore
             $sequenceNumber++;
             $this->eventEnvelopes[] = new EventEnvelope(
                 SequenceNumber::fromInteger($sequenceNumber),
+                new DateTimeImmutable(),
                 $event,
             );
         }
