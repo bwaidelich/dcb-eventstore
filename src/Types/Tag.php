@@ -22,9 +22,9 @@ final class Tag implements JsonSerializable
         Assert::regex($value, '/^[[:alnum:]\-\_]{1,50}$/', 'tag values must only alphanumeric characters, underscores and dashes and must be between 1 and 50 characters long, given: %s');
     }
 
-    public static function create(string $type, string $value): self
+    public static function create(string $key, string $value): self
     {
-        return new self($type, $value);
+        return new self($key, $value);
     }
 
     /**

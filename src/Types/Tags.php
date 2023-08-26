@@ -61,9 +61,9 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray($tags);
     }
 
-    public static function single(string $type, string $value): self
+    public static function single(string $key, string $value): self
     {
-        return self::fromArray([Tag::create($type, $value)]);
+        return self::fromArray([Tag::create($key, $value)]);
     }
 
     public static function create(Tag ...$tags): self
