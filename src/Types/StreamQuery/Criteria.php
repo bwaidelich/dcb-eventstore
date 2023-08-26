@@ -42,6 +42,11 @@ final class Criteria implements IteratorAggregate, JsonSerializable
         return new self(...$criteria);
     }
 
+    public function with(Criterion $criterion): self
+    {
+        return new self(...[...$this->criteria, $criterion]);
+    }
+
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->criteria);

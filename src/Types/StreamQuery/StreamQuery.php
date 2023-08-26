@@ -30,6 +30,11 @@ final class StreamQuery
         return new self(Criteria::fromArray([]));
     }
 
+    public function withCriterion(Criterion $criterion): self
+    {
+        return new self($this->criteria->with($criterion));
+    }
+
     public function matches(Event $event): bool
     {
         foreach ($this->criteria as $criterion) {
