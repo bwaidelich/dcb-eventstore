@@ -87,6 +87,23 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['bar:foos', 'foo:bar', 'foo:baz'], $tags);
     }
 
+    public function test_single_fails_if_key_is_invalid(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Tags::single('invälid', 'some-value');
+    }
+
+    public function test_single_fails_if_value_is_invalid(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Tags::single('some-key', 'invälid');
+    }
+
+    public function test_single_returns_instance_with_single_tag(): void
+    {
+        self::assertTagsMatch(['foo:bar'], Tags::single('foo', 'bar'));
+    }
+
     public function test_intersects_allows_checking_single_tags(): void
     {
         $ids = Tags::fromArray(['foo:bar', 'baz:foos']);

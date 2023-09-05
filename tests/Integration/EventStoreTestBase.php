@@ -36,6 +36,7 @@ use function range;
  * @phpstan-type EventShape array{id?: string, type?: string, data?: string, tags?: array<string>}
  * @phpstan-type EventEnvelopeShape array{id?: string, type?: string, data?: string, tags?: array<string>, sequenceNumber?: int}
  */
+#[CoversClass(Tag::class)]
 #[CoversClass(Tags::class)]
 #[CoversClass(EventData::class)]
 #[CoversClass(ConditionalAppendFailed::class)]
@@ -47,6 +48,12 @@ use function range;
 #[CoversClass(Events::class)]
 #[CoversClass(SequenceNumber::class)]
 #[CoversClass(StreamQuery::class)]
+#[CoversClass(AppendCondition::class)]
+#[CoversClass(EventMetadata::class)]
+#[CoversClass(Criteria::class)]
+#[CoversClass(TagsCriterion::class)]
+#[CoversClass(EventTypesCriterion::class)]
+#[CoversClass(EventTypesAndTagsCriterion::class)]
 abstract class EventStoreTestBase extends TestCase
 {
 
