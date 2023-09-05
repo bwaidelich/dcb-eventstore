@@ -82,6 +82,16 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray(array_merge($this->tags, $other->tags));
     }
 
+    public function firstOfKey(string $key): ?Tag
+    {
+        foreach ($this->tags as $tag) {
+            if ($tag->key === $key) {
+                return $tag;
+            }
+        }
+        return null;
+    }
+
     public function contain(Tag $tag): bool
     {
         return array_key_exists($tag->toString(), $this->tags);
