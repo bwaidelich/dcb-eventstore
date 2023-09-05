@@ -208,6 +208,20 @@ final class TagsTest extends TestCase
         self::assertTagsMatch($expectedResult, Tags::fromArray($ids1)->merge(Tags::fromArray($ids2)));
     }
 
+    public function test_firstOfKey_returns_null_if_no_matching_tag_is_found(): void
+    {
+        $tags = Tags::fromArray(['foo:bar', 'bar:baz']);
+        self::assertNull($tags->firstOfKey('baz'));
+    }
+
+    public function test_firstOfKey_returns_first_matching_tag_if_exists(): void
+    {
+        $tags = Tags::fromArray(['foo:bar', 'bar:baz', 'bar:aaa']);
+        $tag = $tags->firstOfKey('bar');
+        self::assertInstanceOf(Tag::class, $tag);
+        self::assertSame('bar:aaa', $tag->toString());
+    }
+
     public function test_contains_allows_checking_single_tags(): void
     {
         $ids = Tags::fromArray(['foo:bar', 'baz:foos']);
