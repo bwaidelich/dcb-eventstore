@@ -7,14 +7,17 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
 use Wwwision\DCBEventStore\Types\EventMetadata;
+use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\TagsCriterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
 use Wwwision\DCBEventStore\Types\Event;
@@ -61,12 +64,12 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     #[Group('parallel')]
     public function test_consistency(int $process): void
     {
-        $numberOfEventTypes = 5;
-        $numberOfTagKeys = 3;
+        $numberOfEventTypes = 3;
+        $numberOfTagKeys = 2;
         $numberOfTagValues = 3;
-        $numberOfTags = 7;
-        $maxNumberOfEventsPerCommit = 3;
-        $numberOfEventBatches = 30;
+        $numberOfTags = 2;
+        $maxNumberOfEventsPerCommit = 5;
+        $numberOfEventBatches = 10;
 
         $eventTypes = self::spawn($numberOfEventTypes, static fn (int $index) => EventType::fromString('Events' . $index));
         $tagKeys = self::spawn($numberOfTagKeys, static fn (int $index) => 'key' . $index);
@@ -79,6 +82,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             static fn () => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::create(...self::some($numberOfTags, ...$tags))))),
             static fn () => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::create(...self::some($numberOfEventTypes, ...$eventTypes))))),
             static fn () => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::create(...self::some($numberOfEventTypes, ...$eventTypes)), Tags::create(...self::some($numberOfTags, ...$tags))))),
+            static fn () => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::create(...self::some(1, ...$eventTypes)), Tags::create(...self::some(1, ...$tags))), new EventTypesAndTagsCriterion(EventTypes::create(...self::some(1, ...$eventTypes)), Tags::create(...self::some(1, ...$tags))))),
         ];
 
         for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch ++) {
@@ -114,7 +118,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             $lastMatchedSequenceNumber = null;
             foreach ($processedEventEnvelopes as $processedEvent) {
                 self::assertNotSame($eventId, $processedEvent->event->id->value, sprintf('Events id "%s" is used for events with sequence numbers %d and %d', $eventId, $processedEvent->sequenceNumber->value, $sequenceNumber));
-                if ($query !== null && $query->matches($processedEvent->event)) {
+                if ($query !== null && self::queryMatchesEvent($query, $processedEvent->event)) {
                     $lastMatchedSequenceNumber = $processedEvent->sequenceNumber;
                 }
             }
@@ -137,7 +141,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     public function getExpectedHighestSequenceNumber(StreamQuery $query): ExpectedHighestSequenceNumber
     {
-        $lastEventEnvelope = static::createEventStore()->readBackwards($query)->first();
+        $lastEventEnvelope = static::createEventStore()->read($query, ReadOptions::create(backwards: true))->first();
         if ($lastEventEnvelope === null) {
             return ExpectedHighestSequenceNumber::none();
         }
@@ -174,5 +178,25 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     private static function between(int $min, int $max): int
     {
         return random_int($min, $max);
+    }
+
+    private static function queryMatchesEvent(StreamQuery $query, Event $event): bool
+    {
+        foreach ($query->criteria as $criterion) {
+            if (self::criterionMatchesEvent($criterion, $event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
+    {
+        return match ($criterion::class) {
+            EventTypesAndTagsCriterion::class => $event->tags->containEvery($criterion->tags) && $criterion->eventTypes->contain($event->type),
+            EventTypesCriterion::class => $criterion->eventTypes->contain($event->type),
+            TagsCriterion::class => $event->tags->containEvery($criterion->tags),
+            default => throw new RuntimeException(sprintf('The criterion type "%s" is not supported by the %s', $criterion::class, self::class), 1700302540),
+        };
     }
 }

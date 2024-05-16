@@ -7,7 +7,7 @@ namespace Wwwision\DCBEventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
 use Wwwision\DCBEventStore\Types\Events;
-use Wwwision\DCBEventStore\Types\SequenceNumber;
+use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 
 /**
@@ -19,17 +19,16 @@ interface EventStore
      * Returns an event stream that contains events matching the specified {@see StreamQuery} in the order they occurred
      *
      * @param StreamQuery $query The StreamQuery filter every event has to match
-     * @param SequenceNumber|null $from If specified, only events with the given {@see SequenceNumber} or a higher one will be returned
+     * @param ReadOptions|null $options optional configuration for this interaction ({@see ReadOptions})
      */
-    public function read(StreamQuery $query, ?SequenceNumber $from = null): EventStream;
+    public function read(StreamQuery $query, ?ReadOptions $options = null): EventStream;
 
     /**
-     * Returns an event stream that contains events matching the specified {@see StreamQuery} in descending order
+     * Returns an event stream that contains all events
      *
-     * @param StreamQuery $query The StreamQuery filter every event has to match
-     * @param SequenceNumber|null $from If specified, only events with the given {@see SequenceNumber} or a lower one will be returned
+     * @param ReadOptions|null $options optional configuration for this interaction ({@see ReadOptions})
      */
-    public function readBackwards(StreamQuery $query, ?SequenceNumber $from = null): EventStream;
+    public function readAll(?ReadOptions $options = null): EventStream;
 
     /**
      * Commits the specified $events if the specified {@see AppendCondition} is satisfied

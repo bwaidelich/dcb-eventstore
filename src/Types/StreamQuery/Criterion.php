@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Types\StreamQuery;
 
-use Wwwision\DCBEventStore\Types\Event;
-
 /**
  * Common marker interface for {@see StreamQuery} criteria
  *
@@ -13,5 +11,5 @@ use Wwwision\DCBEventStore\Types\Event;
  */
 interface Criterion
 {
-    public function matches(Event $event): bool;
+    public function hash(): CriterionHash;
 }

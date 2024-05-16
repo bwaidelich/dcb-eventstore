@@ -65,6 +65,7 @@ final class StreamQuerySerializer
     {
         return [
             'type' => substr(substr($criterion::class, 0, -9), strrpos($criterion::class, '\\') + 1),
+            'hash' => $criterion->hash(),
             'properties' => get_object_vars($criterion),
         ];
     }

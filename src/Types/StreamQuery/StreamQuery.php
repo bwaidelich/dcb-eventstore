@@ -30,19 +30,14 @@ final class StreamQuery
         return new self(Criteria::fromArray([]));
     }
 
+    public function withCriteria(Criteria $criteria): self
+    {
+        return new self($this->criteria->merge($criteria));
+    }
+
     public function withCriterion(Criterion $criterion): self
     {
         return new self($this->criteria->with($criterion));
-    }
-
-    public function matches(Event $event): bool
-    {
-        foreach ($this->criteria as $criterion) {
-            if ($criterion->matches($event)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public function isWildcard(): bool

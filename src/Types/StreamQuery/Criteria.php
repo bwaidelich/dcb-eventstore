@@ -47,6 +47,12 @@ final class Criteria implements IteratorAggregate, JsonSerializable
         return new self(...[...$this->criteria, $criterion]);
     }
 
+    // TODO: Deduplicate
+    public function merge(self $other): self
+    {
+        return new self(...[...$this->criteria, ...$other->criteria]);
+    }
+
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->criteria);
@@ -64,6 +70,11 @@ final class Criteria implements IteratorAggregate, JsonSerializable
     public function map(Closure $callback): array
     {
         return array_map($callback, $this->criteria);
+    }
+
+    public function hashes(): CriterionHashes
+    {
+        return CriterionHashes::fromArray(array_map(static fn (Criterion $criterion) => $criterion->hash(), $this->criteria));
     }
 
     /**

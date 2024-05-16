@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Helpers;
 
 use DateTimeImmutable;
+use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
+use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
+use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventEnvelope;
 use Wwwision\DCBEventStore\Types\Events;
+use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\SequenceNumber;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\TagsCriterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\CriterionHashes;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
-
 use function count;
 
 /**
@@ -29,9 +37,9 @@ use function count;
 final class InMemoryEventStore implements EventStore
 {
     /**
-     * @var EventEnvelope[]
+     * @var array<array{sequenceNumber:int,recordedAt:DateTimeImmutable,event:Event}>
      */
-    private array $eventEnvelopes = [];
+    private array $events = [];
 
     private function __construct()
     {
@@ -42,52 +50,74 @@ final class InMemoryEventStore implements EventStore
         return new self();
     }
 
-    public function read(StreamQuery $query, ?SequenceNumber $from = null): InMemoryEventStream
+    public function read(StreamQuery $query, ?ReadOptions $options = null): InMemoryEventStream
     {
-        $matchingEventEnvelopes = $this->eventEnvelopes;
-        if ($from !== null) {
-            $matchingEventEnvelopes = array_filter($matchingEventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $eventEnvelope->sequenceNumber->value >= $from->value);
+        $options ??= ReadOptions::create();
+        $matchingEventEnvelopes = [];
+        $events = $this->events;
+        if ($options->backwards) {
+            $events = array_reverse($events);
         }
-        if (!$query->isWildcard()) {
-            $matchingEventEnvelopes = array_filter($matchingEventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $query->matches($eventEnvelope->event));
+        foreach ($events as $event) {
+            if ($options->from !== null && (($options->backwards && $event['sequenceNumber'] > $options->from->value) || (!$options->backwards && $event['sequenceNumber'] < $options->from->value))) {
+                continue;
+            }
+            $matchedCriterionHashes = [];
+            if (!$query->isWildcard()) {
+                foreach ($query->criteria as $criterion) {
+                    if (array_key_exists($criterion->hash()->value, $matchedCriterionHashes)) {
+                        continue;
+                    }
+                    if (self::criterionMatchesEvent($criterion, $event['event'])) {
+                        $matchedCriterionHashes[$criterion->hash()->value] = true;
+                    }
+                }
+                if ($matchedCriterionHashes === []) {
+                    continue;
+                }
+            }
+            $matchingEventEnvelopes[] = new EventEnvelope(SequenceNumber::fromInteger($event['sequenceNumber']), $event['recordedAt'], CriterionHashes::fromArray(array_keys($matchedCriterionHashes)), $event['event']);
         }
         return InMemoryEventStream::create(...$matchingEventEnvelopes);
     }
 
-    public function readBackwards(StreamQuery $query, ?SequenceNumber $from = null): InMemoryEventStream
+    public function readAll(?ReadOptions $options = null): EventStream
     {
-        $matchingEventEnvelopes = array_reverse($this->eventEnvelopes);
-        if ($from !== null) {
-            $matchingEventEnvelopes = array_filter($matchingEventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $eventEnvelope->sequenceNumber->value <= $from->value);
-        }
-        if (!$query->isWildcard()) {
-            $matchingEventEnvelopes = array_filter($matchingEventEnvelopes, static fn (EventEnvelope $eventEnvelope) => $query->matches($eventEnvelope->event));
-        }
-        return InMemoryEventStream::create(...$matchingEventEnvelopes);
+        return $this->read(StreamQuery::wildcard(), $options);
+    }
+
+    private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
+    {
+        return match ($criterion::class) {
+            EventTypesAndTagsCriterion::class => $event->tags->containEvery($criterion->tags) && $criterion->eventTypes->contain($event->type),
+            EventTypesCriterion::class => $criterion->eventTypes->contain($event->type),
+            TagsCriterion::class => $event->tags->containEvery($criterion->tags),
+            default => throw new RuntimeException(sprintf('The criterion type "%s" is not supported by the %s', $criterion::class, self::class), 1700302540),
+        };
     }
 
     public function append(Events $events, AppendCondition $condition): void
     {
         if (!$condition->expectedHighestSequenceNumber->isAny()) {
-            $lastEventEnvelope = $this->readBackwards($condition->query)->first();
+            $lastEventEnvelope = $this->read($condition->query, ReadOptions::create(backwards: true))->first();
             if ($lastEventEnvelope === null) {
                 if (!$condition->expectedHighestSequenceNumber->isNone()) {
-                    throw ConditionalAppendFailed::becauseNoEventMatchedTheQuery($condition->expectedHighestSequenceNumber);
+                    throw ConditionalAppendFailed::becauseHighestExpectedSequenceNumberDoesNotMatch($condition->expectedHighestSequenceNumber);
                 }
             } elseif ($condition->expectedHighestSequenceNumber->isNone()) {
                 throw ConditionalAppendFailed::becauseNoEventWhereExpected();
             } elseif (!$condition->expectedHighestSequenceNumber->matches($lastEventEnvelope->sequenceNumber)) {
-                throw ConditionalAppendFailed::becauseHighestExpectedSequenceNumberDoesNotMatch($condition->expectedHighestSequenceNumber, $lastEventEnvelope->sequenceNumber);
+                throw ConditionalAppendFailed::becauseHighestExpectedSequenceNumberDoesNotMatch($condition->expectedHighestSequenceNumber);
             }
         }
-        $sequenceNumber = count($this->eventEnvelopes);
+        $sequenceNumber = count($this->events);
         foreach ($events as $event) {
             $sequenceNumber++;
-            $this->eventEnvelopes[] = new EventEnvelope(
-                SequenceNumber::fromInteger($sequenceNumber),
-                new DateTimeImmutable(),
-                $event,
-            );
+            $this->events[] = [
+                'sequenceNumber' => $sequenceNumber,
+                'recordedAt' => new DateTimeImmutable(),
+                'event' => $event,
+            ];
         }
     }
 }
