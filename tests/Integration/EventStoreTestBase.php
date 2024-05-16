@@ -398,13 +398,15 @@ abstract class EventStoreTestBase extends TestCase
         if ($unsupportedKeys !== []) {
             throw new InvalidArgumentException(sprintf('Invalid key(s) "%s" for expected event. Allowed keys are: "%s"', implode('", "', $unsupportedKeys), implode('", "', $supportedKeys)), 1684668588);
         }
+        $criterionHashes = $eventEnvelope->criterionHashes->toStringArray();
+        sort($criterionHashes);
         $actualAsArray = [
             'id' => $eventEnvelope->event->id->value,
             'type' => $eventEnvelope->event->type->value,
             'data' => $eventEnvelope->event->data->value,
             'tags' => $eventEnvelope->event->tags->toSimpleArray(),
             'sequenceNumber' => $eventEnvelope->sequenceNumber->value,
-            'criteria' => $eventEnvelope->criterionHashes->toStringArray(),
+            'criteria' => $criterionHashes,
         ];
         foreach (array_diff($supportedKeys, $keys) as $unusedKey) {
             unset($actualAsArray[$unusedKey]);
