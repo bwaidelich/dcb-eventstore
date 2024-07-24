@@ -37,7 +37,7 @@ interface EventStore
      *
      * @param Events $events The events to append to the event stream
      * @param AppendCondition $condition The condition that has to be met
-     * @throws ConditionalAppendFailed If specified $query and $expectedLastEventId don't match
+     * @throws ConditionalAppendFailed If specified $condition is violated
      */
     public function append(Events $events, AppendCondition $condition): void;
 }
