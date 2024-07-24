@@ -11,25 +11,22 @@ use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
-use Wwwision\DCBEventStore\Types\EventMetadata;
-use Wwwision\DCBEventStore\Types\ReadOptions;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\TagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
-use Wwwision\DCBEventStore\Types\Tag;
-use Wwwision\DCBEventStore\Types\Tags;
 use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventData;
 use Wwwision\DCBEventStore\Types\EventEnvelope;
 use Wwwision\DCBEventStore\Types\EventId;
+use Wwwision\DCBEventStore\Types\EventMetadata;
 use Wwwision\DCBEventStore\Types\Events;
 use Wwwision\DCBEventStore\Types\EventType;
-use Wwwision\DCBEventStore\Types\EventTypes;
 use Wwwision\DCBEventStore\Types\ExpectedHighestSequenceNumber;
+use Wwwision\DCBEventStore\Types\ReadOptions;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuerySerializer;
+use Wwwision\DCBEventStore\Types\Tag;
+use Wwwision\DCBEventStore\Types\Tags;
 use function array_map;
 use function array_rand;
 use function array_slice;
@@ -79,10 +76,10 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             $tags[] = Tag::create($key, self::either(...$tagValues));
         }
         $queryCreators = [
-            static fn () => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::create(...self::some($numberOfTags, ...$tags))))),
-            static fn () => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::create(...self::some($numberOfEventTypes, ...$eventTypes))))),
-            static fn () => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::create(...self::some($numberOfEventTypes, ...$eventTypes)), Tags::create(...self::some($numberOfTags, ...$tags))))),
-            static fn () => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::create(...self::some(1, ...$eventTypes)), Tags::create(...self::some(1, ...$tags))), new EventTypesAndTagsCriterion(EventTypes::create(...self::some(1, ...$eventTypes)), Tags::create(...self::some(1, ...$tags))))),
+            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: self::some($numberOfTags, ...$tags)))),
+            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes)))),
+            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags)))),
+            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)), EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)))),
         ];
 
         for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch ++) {
@@ -193,9 +190,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
     {
         return match ($criterion::class) {
-            EventTypesAndTagsCriterion::class => $event->tags->containEvery($criterion->tags) && $criterion->eventTypes->contain($event->type),
-            EventTypesCriterion::class => $criterion->eventTypes->contain($event->type),
-            TagsCriterion::class => $event->tags->containEvery($criterion->tags),
+            EventTypesAndTagsCriterion::class => ($criterion->tags === null || $event->tags->containEvery($criterion->tags)) && ($criterion->eventTypes === null || $criterion->eventTypes->contain($event->type)),
             default => throw new RuntimeException(sprintf('The criterion type "%s" is not supported by the %s', $criterion::class, self::class), 1700302540),
         };
     }

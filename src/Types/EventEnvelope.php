@@ -19,4 +19,9 @@ final class EventEnvelope
         public readonly Event $event,
     ) {
     }
+
+    public function withCriterionHashes(CriterionHashes $criterionHashes): self
+    {
+        return new self($this->sequenceNumber, $this->recordedAt, $criterionHashes, $this->event);
+    }
 }

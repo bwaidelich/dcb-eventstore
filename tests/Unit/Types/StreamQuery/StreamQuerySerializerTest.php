@@ -5,25 +5,21 @@ namespace Unit\Types\StreamQuery;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Wwwision\DCBEventStore\Types\EventType;
-use Wwwision\DCBEventStore\Types\EventTypes;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\TagsCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuerySerializer;
-use Wwwision\DCBEventStore\Types\Tags;
 
 #[CoversClass(StreamQuerySerializer::class)]
 final class StreamQuerySerializerTest extends TestCase
 {
     public static function dataprovider_serialize(): iterable
     {
-        yield ['query' => StreamQuery::create(Criteria::create(new TagsCriterion(Tags::single('foo', 'bar')))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"Tags","hash":"addb4f7ae3afe9ea5c8975ba330bf419","properties":{"tags":[{"key":"foo","value":"bar"}]}}]}'];
-        yield ['query' => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::single('SomeEventType')))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypes","hash":"ed73d849d917379fade8a8d4affeb1bd","properties":{"eventTypes":["SomeEventType"]}}]}'];
-        yield ['query' => StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::create(EventType::fromString('SomeOtherEventType'), EventType::fromString('SomeEventType'))))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypes","hash":"a926cae309aa0cfc14ebbae0435c136f","properties":{"eventTypes":["SomeEventType","SomeOtherEventType"]}}]}'];
-        yield ['query' => StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::single('SomeEventType'), Tags::single('foo', 'bar')))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"1d8d7779dae8565a4378ed69ff9677a4","properties":{"eventTypes":["SomeEventType"],"tags":[{"key":"foo","value":"bar"}]}}]}'];
+        yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: ['foo:bar']))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"a2d4473e4dd478bf4bc84b6dc39eeed4","properties":{"tags":[{"key":"foo","value":"bar"}],"onlyLastEvent":false}}]}'];
+        yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType']))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"4e7de6454d2d1802ab1a89addb4e8faf","properties":{"eventTypes":["SomeEventType"],"onlyLastEvent":false}}]}'];
+        yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['SomeOtherEventType', 'SomeEventType']))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"e4f666fc292f9ead35ac959d3a43fcf2","properties":{"eventTypes":["SomeEventType","SomeOtherEventType"],"onlyLastEvent":false}}]}'];
+        yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType', 'SomeOtherEventType'], tags: ['foo:bar'], onlyLastEvent: false))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"c390815d2e7cffcd1a675817f89fb33c","properties":{"eventTypes":["SomeEventType","SomeOtherEventType"],"tags":[{"key":"foo","value":"bar"}],"onlyLastEvent":false}}]}'];
+        yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType'], tags: ['foo:bar', 'baz:foos'], onlyLastEvent: true))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","hash":"af11a6a8247319ce67ca292b17d0bd06","properties":{"eventTypes":["SomeEventType"],"tags":[{"key":"baz","value":"foos"},{"key":"foo","value":"bar"}],"onlyLastEvent":true}}]}'];
     }
 
     /**

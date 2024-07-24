@@ -3,17 +3,17 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Integration;
 
+use Hoa\File\Read;
 use InvalidArgumentException;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
+use Wwwision\DCBEventStore\Types\EventEnvelopes;
 use Wwwision\DCBEventStore\Types\EventMetadata;
 use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\TagsCriterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
@@ -53,8 +53,6 @@ use function range;
 #[CoversClass(AppendCondition::class)]
 #[CoversClass(EventMetadata::class)]
 #[CoversClass(Criteria::class)]
-#[CoversClass(TagsCriterion::class)]
-#[CoversClass(EventTypesCriterion::class)]
 #[CoversClass(EventTypesAndTagsCriterion::class)]
 abstract class EventStoreTestBase extends TestCase
 {
@@ -100,7 +98,7 @@ abstract class EventStoreTestBase extends TestCase
     public function test_read_allows_filtering_of_events_by_tag(): void
     {
         $this->appendDummyEvents();
-        $tagsCriterion = new TagsCriterion(Tags::fromArray(['baz:foos']));
+        $tagsCriterion = EventTypesAndTagsCriterion::create(tags: ['baz:foos']);
         $query = StreamQuery::create(Criteria::create($tagsCriterion));
         self::assertEventStream($this->stream($query), [
             ['data' => 'a', 'criteria' => [$tagsCriterion]],
@@ -122,8 +120,8 @@ abstract class EventStoreTestBase extends TestCase
             ['id' => 'g', 'tags' => ['baz:foos', 'foo:bar', 'foos:baz']],
             ['id' => 'h', 'tags' => ['baz:foosn', 'foo:notbar', 'foos:bar']],
         ]);
-        $tagsCriterion1 = new TagsCriterion(Tags::fromArray(['foo:bar']));
-        $tagsCriterion2 = new TagsCriterion(Tags::fromArray(['baz:foos']));
+        $tagsCriterion1 = EventTypesAndTagsCriterion::create(tags: ['foo:bar']);
+        $tagsCriterion2 = EventTypesAndTagsCriterion::create(tags: ['baz:foos']);
         $query = StreamQuery::create(Criteria::create($tagsCriterion1, $tagsCriterion2));
         self::assertEventStream($this->stream($query), [
             ['id' => 'a', 'criteria' => [$tagsCriterion1]],
@@ -147,7 +145,7 @@ abstract class EventStoreTestBase extends TestCase
             ['id' => 'g', 'tags' => ['baz:foos', 'foo:bar', 'foos:baz']],
             ['id' => 'h', 'tags' => ['baz:foosn', 'foo:notbar', 'foos:bar']],
         ]);
-        $tagsCriterion = new TagsCriterion(Tags::fromArray(['foo:bar', 'baz:foos']));
+        $tagsCriterion = EventTypesAndTagsCriterion::create(tags: ['foo:bar', 'baz:foos']);
         $query = StreamQuery::create(Criteria::create($tagsCriterion));
         self::assertEventStream($this->stream($query), [
             ['id' => 'b', 'criteria' => [$tagsCriterion]],
@@ -156,10 +154,30 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    public function test_read_allows_filtering_of_last_event_by_tag(): void
+    {
+        $this->appendEvents([
+            ['id' => 'a', 'tags' => ['foo:bar']],
+            ['id' => 'b', 'tags' => ['foo:bar', 'baz:foos']],
+            ['id' => 'c', 'tags' => ['baz:foos', 'foo:bar']],
+            ['id' => 'd', 'tags' => ['baz:foos']],
+            ['id' => 'e', 'tags' => ['baz:foosnot']],
+            ['id' => 'f', 'tags' => ['foo:bar', 'baz:notfoos']],
+            ['id' => 'g', 'tags' => ['baz:foos', 'foo:bar', 'foos:baz']],
+            ['id' => 'h', 'tags' => ['baz:foosn', 'foo:notbar', 'foos:bar']],
+        ]);
+        $tagsCriterion = EventTypesAndTagsCriterion::create(tags: ['foo:bar', 'baz:foos'], onlyLastEvent: true);
+        $query = StreamQuery::create(Criteria::create($tagsCriterion));
+        self::assertEventStream($this->stream($query), [
+            ['id' => 'g', 'criteria' => [$tagsCriterion]],
+        ]);
+    }
+
+
     public function test_read_allows_filtering_of_events_by_event_types(): void
     {
         $this->appendDummyEvents();
-        $eventTypesCriterion = new EventTypesCriterion(EventTypes::fromStrings('SomeEventType'));
+        $eventTypesCriterion = EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType']);
         $query = StreamQuery::create(Criteria::create($eventTypesCriterion));
         self::assertEventStream($this->stream($query), [
             ['data' => 'a', 'criteria' => [$eventTypesCriterion]],
@@ -168,10 +186,20 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    public function test_read_allows_filtering_of_last_event_by_event_types(): void
+    {
+        $this->appendDummyEvents();
+        $eventTypesCriterion = EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType'], onlyLastEvent: true);
+        $query = StreamQuery::create(Criteria::create($eventTypesCriterion));
+        self::assertEventStream($this->stream($query), [
+            ['data' => 'e', 'criteria' => [$eventTypesCriterion]],
+        ]);
+    }
+
     public function test_read_allows_filtering_of_events_by_tags_and_event_types(): void
     {
         $this->appendDummyEvents();
-        $eventTypesAndTagsCriterion = new EventTypesAndTagsCriterion(EventTypes::fromStrings('SomeEventType'), Tags::create(Tag::fromString('baz:foos')));
+        $eventTypesAndTagsCriterion = EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos');
         $query = StreamQuery::create(Criteria::create($eventTypesAndTagsCriterion));
         self::assertEventStream($this->stream($query), [
             ['data' => 'a', 'criteria' => [$eventTypesAndTagsCriterion]],
@@ -179,10 +207,20 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    public function test_read_allows_filtering_of_last_event_by_tags_and_event_types(): void
+    {
+        $this->appendDummyEvents();
+        $eventTypesAndTagsCriterion = EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos', onlyLastEvent: true);
+        $query = StreamQuery::create(Criteria::create($eventTypesAndTagsCriterion));
+        self::assertEventStream($this->stream($query), [
+            ['data' => 'e', 'criteria' => [$eventTypesAndTagsCriterion]],
+        ]);
+    }
+
     public function test_read_allows_fetching_no_events(): void
     {
         $this->appendDummyEvents();
-        $query = StreamQuery::create(Criteria::create(new EventTypesCriterion(EventTypes::fromStrings('NonExistingEventType'))));
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['NonExistingEventType'])));
         self::assertEventStream($this->stream($query), []);
     }
 
@@ -232,7 +270,7 @@ abstract class EventStoreTestBase extends TestCase
     public function test_read_backwards_allows_to_specify_maximum_sequenceNumber(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(StreamQuery::wildcard(), ReadOptions::create(backwards: true, from: SequenceNumber::fromInteger(4))), [
+        self::assertEventStream($this->getEventStore()->read(StreamQuery::wildcard(), ReadOptions::create(from: SequenceNumber::fromInteger(4), backwards: true)), [
             ['id' => 'id-d', 'data' => 'd', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 4],
             ['id' => 'id-c', 'data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 3],
             ['id' => 'id-b', 'data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 2],
@@ -243,19 +281,51 @@ abstract class EventStoreTestBase extends TestCase
     public function test_read_backwards_returns_single_event_if_maximum_sequenceNumber_is_one(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(StreamQuery::wildcard(), ReadOptions::create(backwards: true, from: SequenceNumber::fromInteger(1))), [
+        self::assertEventStream($this->getEventStore()->read(StreamQuery::wildcard(), ReadOptions::create(from: SequenceNumber::fromInteger(1), backwards: true)), [
             ['id' => 'id-a', 'data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 1],
         ]);
+    }
+
+    public function test_read_options_dont_affect_matching_events(): void
+    {
+        $this->appendEvents([
+            ['id' => 'a', 'type' => 'Type1', 'tags' => ['foo:bar']],
+            ['id' => 'b', 'type' => 'Type2', 'tags' => ['foo:bar', 'baz:foos']],
+            ['id' => 'c', 'type' => 'Type3', 'tags' => ['baz:foos', 'foo:bar']],
+            ['id' => 'd', 'type' => 'Type1', 'tags' => ['baz:foos']],
+            ['id' => 'e', 'type' => 'Type2', 'tags' => ['baz:foosnot']],
+            ['id' => 'f', 'type' => 'Type2', 'tags' => ['foo:bar', 'baz:notfoos']],
+            ['id' => 'g', 'type' => 'Type1', 'tags' => ['baz:foos', 'foo:bar', 'foos:baz']],
+            ['id' => 'h', 'type' => 'Type3', 'tags' => ['baz:foosn', 'foo:notbar', 'foos:bar']],
+        ]);
+        $criterion1 = EventTypesAndTagsCriterion::create(tags: ['foo:bar'], onlyLastEvent: true);
+        $criterion2 = EventTypesAndTagsCriterion::create(eventTypes: ['Type2', 'Type1'], tags: ['foo:bar']);
+        $query = StreamQuery::create(Criteria::create($criterion1, $criterion2));
+
+        /** @var EventEnvelopeShape[] $expectedEvents */
+        $expectedEvents = [
+            ['id' => 'a', 'criteria' => [$criterion2]],
+            ['id' => 'b', 'criteria' => [$criterion2]],
+            ['id' => 'f', 'criteria' => [$criterion2]],
+            ['id' => 'g', 'criteria' => [$criterion2, $criterion1]],
+        ];
+        self::assertEventStream($this->stream($query), $expectedEvents);
+
+        self::assertEventStream($this->stream($query, ReadOptions::create(backwards: true)), array_reverse($expectedEvents));
+        self::assertEventStream($this->stream($query, ReadOptions::create(from: SequenceNumber::fromInteger(3))), array_slice($expectedEvents, 2));
+        self::assertEventStream($this->stream($query, ReadOptions::create(from: SequenceNumber::fromInteger(3), backwards: true)), array_slice(array_reverse($expectedEvents), 2));
     }
 
     public function test_append_appends_event_if_expectedHighestSequenceNumber_matches(): void
     {
         $this->appendDummyEvents();
 
-        $eventTypesAndTagsCriterion = new EventTypesAndTagsCriterion(EventTypes::fromStrings('SomeEventType'), Tags::create(Tag::fromString('baz:foos')));
+        $eventTypesAndTagsCriterion = EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos');
         $query = StreamQuery::create(Criteria::create($eventTypesAndTagsCriterion));
         $stream = $this->getEventStore()->read($query, ReadOptions::create(backwards: true));
-        $lastSequenceNumber = $stream->first()->sequenceNumber;
+        $lastEvent = $stream->first();
+        self::assertInstanceOf(EventEnvelope::class, $lastEvent);
+        $lastSequenceNumber = $lastEvent->sequenceNumber;
         $this->conditionalAppendEvent(['type' => 'SomeEventType', 'data' => 'new event', 'tags' => ['baz:foos']], $query, ExpectedHighestSequenceNumber::fromSequenceNumber($lastSequenceNumber));
 
         self::assertEventStream($this->getEventStore()->read($query), [
@@ -269,9 +339,11 @@ abstract class EventStoreTestBase extends TestCase
     {
         $this->appendDummyEvents();
 
-        $query = StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::fromStrings('SomeEventType'), Tags::create(Tag::fromString('baz:foos')))));
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos')));
         $stream = $this->getEventStore()->read($query, ReadOptions::create(backwards: true));
-        $lastSequenceNumber = $stream->first()->sequenceNumber;
+        $lastEvent = $stream->first();
+        self::assertInstanceOf(EventEnvelope::class, $lastEvent);
+        $lastSequenceNumber = $lastEvent->sequenceNumber;
 
         $this->appendEvent(['type' => 'SomeEventType', 'tags' => ['baz:foos']]);
 
@@ -283,7 +355,7 @@ abstract class EventStoreTestBase extends TestCase
     {
         $this->appendDummyEvents();
 
-        $query = StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::fromStrings('SomeEventType'), Tags::create(Tag::fromString('baz:foos')))));
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos')));
 
         $this->expectException(ConditionalAppendFailed::class);
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedHighestSequenceNumber::none());
@@ -291,7 +363,7 @@ abstract class EventStoreTestBase extends TestCase
 
     public function test_append_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
     {
-        $query = StreamQuery::create(Criteria::create(new EventTypesAndTagsCriterion(EventTypes::fromStrings('SomeEventTypeThatDidNotOccur'), Tags::create(Tag::fromString('baz:foos')))));
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventTypeThatDidNotOccur', tags: 'baz:foos')));
 
         $this->expectException(ConditionalAppendFailed::class);
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedHighestSequenceNumber::fromInteger(123));
@@ -304,15 +376,9 @@ abstract class EventStoreTestBase extends TestCase
         return $this->getEventStore()->read(StreamQuery::wildcard());
     }
 
-    final protected function parseQuery(string $query): StreamQuery
+    final protected function stream(StreamQuery $query, ReadOptions $options = null): EventStream
     {
-        $criteria = StreamQueryParser::parse($query);
-        return StreamQuery::create($criteria);
-    }
-
-    final protected function stream(StreamQuery $query): EventStream
-    {
-        return $this->getEventStore()->read($query);
+        return $this->getEventStore()->read($query, $options);
     }
 
     final protected function appendDummyEvents(): void
@@ -342,7 +408,7 @@ abstract class EventStoreTestBase extends TestCase
     }
 
     /**
-     * @phpstan-param EventShape $event
+     * @phpstan-param EventShape[] $events
      */
     final protected function conditionalAppendEvents(array $events, StreamQuery $query, ExpectedHighestSequenceNumber $expectedHighestSequenceNumber): void
     {
@@ -360,7 +426,7 @@ abstract class EventStoreTestBase extends TestCase
     /**
      * @phpstan-param array<EventEnvelopeShape> $expectedEvents
      */
-    final protected static function assertEventStream(EventStream $eventStream, array $expectedEvents): void
+    final protected static function assertEventStream(EventStream|EventEnvelopes $eventStream, array $expectedEvents): void
     {
         $actualEvents = [];
         $index = 0;
