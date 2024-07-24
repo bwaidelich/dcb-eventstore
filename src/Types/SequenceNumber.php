@@ -15,7 +15,7 @@ final class SequenceNumber
 {
     private function __construct(public readonly int $value)
     {
-        Assert::greaterThanEq($this->value, 1, 'sequence number has to be represented with a positive integer of at least 1, given: %d');
+        Assert::natural($this->value, 'sequence number has to be represented with a non-negative integer, given: %d');
     }
 
     public static function fromInteger(int $value): self
