@@ -133,4 +133,9 @@ final class InMemoryEventStore implements EventStore
         }
         $this->eventEnvelopes = $this->eventEnvelopes->append($newEventEnvelopes);
     }
+
+    public function resetState(): void
+    {
+        $this->eventEnvelopes = EventEnvelopes::none();
+    }
 }
