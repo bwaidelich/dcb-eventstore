@@ -23,7 +23,7 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['someKey:someId'], $ids);
     }
 
-    public function test_create_merges_repeating_key_and_value_pairs(): void
+    public function test_create_merges_repeating_tags(): void
     {
         $Tag = Tag::fromString('someKey:someValue');
         self::assertTagsMatch(['someKey:someValue'], Tags::create($Tag, $Tag, $Tag));
@@ -70,13 +70,7 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['bar:foos', 'foo:bar', 'foo:baz'], $tags);
     }
 
-    public function test_single_fails_if_key_is_invalid(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Tags::single('invälid', 'some-value');
-    }
-
-    public function test_single_fails_if_value_is_invalid(): void
+    public function test_single_fails_if_tag_is_invalid(): void
     {
         $this->expectException(InvalidArgumentException::class);
         Tags::single('invälid');
