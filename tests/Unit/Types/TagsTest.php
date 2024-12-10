@@ -200,7 +200,7 @@ final class TagsTest extends TestCase
 
         yield ['tags' => ['foo:bar'], 'tag' => 'key:bar2', 'expectedResult' => false];
         yield ['tags' => ['foo:bar'], 'tag' => 'bar:bar', 'expectedResult' => false];
-        yield ['tags' => ['foo:bar', 'baz:foos'], 'bar' => 'notFoo:notBar', 'expectedResult' => false];
+        yield ['tags' => ['foo:bar', 'baz:foos'], 'tag' => 'notFoo:notBar', 'expectedResult' => false];
     }
 
     /**
