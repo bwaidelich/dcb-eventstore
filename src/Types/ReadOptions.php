@@ -23,7 +23,7 @@ final class ReadOptions
 
     public static function create(
         ?SequenceNumber $from = null,
-        bool $backwards = null,
+        ?bool $backwards = null,
     ): self {
         return new self(
             $from,
@@ -33,7 +33,7 @@ final class ReadOptions
 
     public function with(
         ?SequenceNumber $from = null,
-        bool $backwards = null,
+        ?bool $backwards = null,
     ): self {
         return new self(
             $from ?? $this->from,

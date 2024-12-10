@@ -28,23 +28,22 @@ final class Tags implements IteratorAggregate, JsonSerializable
      */
     private function __construct(private readonly array $tags)
     {
-        Assert::notEmpty($this->tags, 'Tags must not be empty');
     }
 
     /**
-     * @param array<mixed> $tags
+     * @param array<Tag|string> $tags
      */
     public static function fromArray(array $tags): self
     {
         $convertedTags = [];
         foreach ($tags as $tag) {
             if (!$tag instanceof Tag) {
-                if (!is_string($tag) && !is_array($tag)) {
-                    throw new InvalidArgumentException(sprintf('Tags must be of type string or array, given: %s', get_debug_type($tag)), 1690808045);
+                if (!is_string($tag)) {
+                    throw new InvalidArgumentException(sprintf('Tags must be of type %s or string, given: %s', Tag::class, get_debug_type($tag)), 1690808045);
                 }
-                $tag = Tag::parse($tag);
+                $tag = Tag::fromString($tag);
             }
-            $convertedTags[$tag->toString()] = $tag;
+            $convertedTags[$tag->value] = $tag;
         }
         ksort($convertedTags);
         return new self($convertedTags);
@@ -61,9 +60,9 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray($tags);
     }
 
-    public static function single(string $key, string $value): self
+    public static function single(string $value): self
     {
-        return self::fromArray([Tag::create($key, $value)]);
+        return self::fromArray([Tag::fromString($value)]);
     }
 
     public static function create(Tag ...$tags): self
@@ -82,19 +81,9 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray(array_merge($this->tags, $other->tags));
     }
 
-    public function firstOfKey(string $key): ?Tag
-    {
-        foreach ($this->tags as $tag) {
-            if ($tag->key === $key) {
-                return $tag;
-            }
-        }
-        return null;
-    }
-
     public function contain(Tag $tag): bool
     {
-        return array_key_exists($tag->toString(), $this->tags);
+        return array_key_exists($tag->value, $this->tags);
     }
 
     public function containEvery(Tags $tags): bool
@@ -128,7 +117,7 @@ final class Tags implements IteratorAggregate, JsonSerializable
     /**
      * @return array<string> in the format ['someKey:someValue', 'someKey:someOtherValue']
      */
-    public function toSimpleArray(): array
+    public function toStrings(): array
     {
         return array_keys($this->tags);
     }

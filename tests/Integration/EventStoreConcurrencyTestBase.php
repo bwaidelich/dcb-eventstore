@@ -14,7 +14,6 @@ use Wwwision\DCBEventStore\Types\AppendCondition;
 use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventData;
 use Wwwision\DCBEventStore\Types\EventEnvelope;
-use Wwwision\DCBEventStore\Types\EventId;
 use Wwwision\DCBEventStore\Types\EventMetadata;
 use Wwwision\DCBEventStore\Types\Events;
 use Wwwision\DCBEventStore\Types\EventType;
@@ -73,7 +72,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
         $tagValues = self::spawn($numberOfTagValues, static fn (int $index) => 'value' . $index);
         $tags = [];
         foreach ($tagKeys as $key) {
-            $tags[] = Tag::create($key, self::either(...$tagValues));
+            $tags[] = Tag::fromString($key . ':' . self::either(...$tagValues));
         }
         $queryCreators = [
             static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: self::some($numberOfTags, ...$tags)))),
@@ -91,7 +90,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             for ($i = 0; $i < $numberOfEvents; $i++) {
                 $descriptor = $process . '(' . getmypid() . ') ' . $eventBatch . '.' . ($i + 1) . '/' . $numberOfEvents;
                 $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => StreamQuerySerializer::serialize($query), 'expectedHighestSequenceNumber' => $expectedHighestSequenceNumber->isNone() ? null : $expectedHighestSequenceNumber->extractSequenceNumber()->value, 'descriptor' => $descriptor];
-                $events[] = new Event(EventId::create(), self::either(...$eventTypes), EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), Tags::create(...self::some($numberOfTags, ...$tags)), EventMetadata::none());
+                $events[] = Event::create(type: self::either(...$eventTypes), data: EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), tags: Tags::create(...self::some($numberOfTags, ...$tags)), metadata: EventMetadata::none());
             }
             try {
                 static::createEventStore()->append(Events::fromArray($events), new AppendCondition($query, $expectedHighestSequenceNumber));
@@ -110,22 +109,20 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             $payload = json_decode($eventEnvelope->event->data->value, true, 512, JSON_THROW_ON_ERROR);
             $query = isset($payload['query']) ? StreamQuerySerializer::unserialize($payload['query']) : null;
             $sequenceNumber = $eventEnvelope->sequenceNumber->value;
-            self::assertGreaterThan($lastSequenceNumber, $sequenceNumber, sprintf('Expected sequence number of event "%s" to be greater than the previous one (%d) but it is %d', $eventEnvelope->event->id->value, $lastSequenceNumber, $sequenceNumber));
-            $eventId = $eventEnvelope->event->id->value;
+            self::assertGreaterThan($lastSequenceNumber, $sequenceNumber, sprintf('Expected sequence number to be greater than the previous one (%d) but it is %d', $lastSequenceNumber, $sequenceNumber));
             $lastMatchedSequenceNumber = null;
             foreach ($processedEventEnvelopes as $processedEvent) {
-                self::assertNotSame($eventId, $processedEvent->event->id->value, sprintf('Events id "%s" is used for events with sequence numbers %d and %d', $eventId, $processedEvent->sequenceNumber->value, $sequenceNumber));
                 if ($query !== null && self::queryMatchesEvent($query, $processedEvent->event)) {
                     $lastMatchedSequenceNumber = $processedEvent->sequenceNumber;
                 }
             }
             if ($query !== null) {
                 if ($payload['expectedHighestSequenceNumber'] === null) {
-                    self::assertNull($lastMatchedSequenceNumber, sprintf('Events "%s" (sequence number %d) was appended with no expectedHighestSequenceNumber but the event "%s" matches the corresponding query', $eventId, $sequenceNumber, $lastMatchedSequenceNumber?->value));
+                    self::assertNull($lastMatchedSequenceNumber, sprintf('Event at sequence number %d was appended with no expectedHighestSequenceNumber but the event "%s" matches the corresponding query', $sequenceNumber, $lastMatchedSequenceNumber?->value));
                 } elseif ($lastMatchedSequenceNumber === null) {
-                    self::fail(sprintf('Events "%s" (sequence number %d) was appended with expectedHighestSequenceNumber %d but no event matches the corresponding query', $eventId, $sequenceNumber, $payload['expectedHighestSequenceNumber']));
+                    self::fail(sprintf('Events at sequence number %d was appended with expectedHighestSequenceNumber %d but no event matches the corresponding query', $sequenceNumber, $payload['expectedHighestSequenceNumber']));
                 } else {
-                    self::assertSame($lastMatchedSequenceNumber->value, $payload['expectedHighestSequenceNumber'], sprintf('Events "%s" (sequence number %d) was appended with expectedHighestSequenceNumber %d but the last event that matches the corresponding query is "%s"', $eventId, $sequenceNumber, $payload['expectedHighestSequenceNumber'], $lastMatchedSequenceNumber->value));
+                    self::assertSame($lastMatchedSequenceNumber->value, $payload['expectedHighestSequenceNumber'], sprintf('Events at sequence number %d was appended with expectedHighestSequenceNumber %d but the last event that matches the corresponding query is "%s"', $sequenceNumber, $payload['expectedHighestSequenceNumber'], $lastMatchedSequenceNumber->value));
                 }
             }
             $lastSequenceNumber = $sequenceNumber;

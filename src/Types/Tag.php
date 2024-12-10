@@ -10,69 +10,30 @@ use Webmozart\Assert\Assert;
 use function explode;
 
 /**
- * Tag that can be attached to an {@see Event}, usually containing some identifier for an entity or concept of the core domain
+ * Tag that can be attached to an {@see Event}, usually containing some identifier for an entity or concept of the core domain, for example "product:sku123"
  */
 final class Tag implements JsonSerializable
 {
+    public const int LENGTH_MAX = 150;
+
     private function __construct(
-        public readonly string $key,
         public readonly string $value,
     ) {
-        Assert::regex($key, '/^[[:alnum:]\-\_]{1,50}$/', 'tag keys must only alphanumeric characters, underscores and dashes and must be between 1 and 50 characters long, given: %s');
-        Assert::regex($value, '/^[[:alnum:]\-\_]{1,50}$/', 'tag values must only alphanumeric characters, underscores and dashes and must be between 1 and 50 characters long, given: %s');
+        Assert::regex($value, '/^[[:alnum:]\-\_\:]{1,' . self::LENGTH_MAX . '}$/', 'tags must only contain alphanumeric characters, underscores, dashes and colons and must be between 1 and ' . self::LENGTH_MAX . ' characters long, given: %s');
     }
 
-    public static function create(string $key, string $value): self
+    public static function fromString(string $value): self
     {
-        return new self($key, $value);
-    }
-
-    /**
-     * @param array<mixed>|string $value
-     * @return self
-     */
-    public static function parse(array|string $value): self
-    {
-        if (is_string($value)) {
-            return self::fromString($value);
-        }
-        return self::fromArray($value);
-    }
-
-    public static function fromString(string $string): self
-    {
-        Assert::contains($string, ':');
-        [$key, $value] = explode(':', $string);
-        return new self($key, $value);
-    }
-
-    /**
-     * @param array<mixed> $array
-     */
-    public static function fromArray(array $array): self
-    {
-        Assert::keyExists($array, 'key');
-        Assert::string($array['key'], 'Tag key has to be of type string, given: %s');
-        Assert::keyExists($array, 'value');
-        Assert::string($array['value'], 'Tag value has to be of type string, given: %s');
-        return new self($array['key'], $array['value']);
+        return new self($value);
     }
 
     public function equals(self $other): bool
     {
-        return $other->key === $this->key && $other->value === $this->value;
+        return $other->value === $this->value;
     }
 
-    public function toString(): string
+    public function jsonSerialize(): string
     {
-        return $this->key . ':' . $this->value;
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    public function jsonSerialize(): array
-    {
-        return get_object_vars($this);
+        return $this->value;
     }
 }

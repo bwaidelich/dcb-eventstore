@@ -91,11 +91,6 @@ final class InMemoryEventStore implements EventStore
         return InMemoryEventStream::create(...$matchingEventEnvelopes);
     }
 
-    public function readAll(?ReadOptions $options = null): EventStream
-    {
-        return $this->read(StreamQuery::wildcard(), $options);
-    }
-
     private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
     {
         return match ($criterion::class) {
@@ -104,7 +99,7 @@ final class InMemoryEventStore implements EventStore
         };
     }
 
-    public function append(Events $events, AppendCondition $condition): void
+    public function append(Events|Event $events, AppendCondition $condition): void
     {
         if (!$condition->expectedHighestSequenceNumber->isAny()) {
             $lastEventEnvelope = $this->read($condition->query, ReadOptions::create(backwards: true))->first();
@@ -120,6 +115,9 @@ final class InMemoryEventStore implements EventStore
         }
         $sequenceNumber = SequenceNumber::fromInteger(count($this->eventEnvelopes) + 1);
         $newEventEnvelopes = EventEnvelopes::none();
+        if ($events instanceof Event) {
+            $events = Events::fromArray([$events]);
+        }
         foreach ($events as $event) {
             $newEventEnvelopes = $newEventEnvelopes->append(
                 new EventEnvelope(

@@ -24,7 +24,7 @@ final class EventTypesAndTagsCriterion implements Criterion
         $this->hash = CriterionHash::fromParts(
             substr(substr(self::class, 0, -9), strrpos(self::class, '\\') + 1),
             implode(',', $eventTypes?->toStringArray() ?? []),
-            implode(',', $tags?->toSimpleArray() ?? []),
+            implode(',', $tags?->toStrings() ?? []),
             $onlyLastEvent ? 'onlyLastEvent' : '',
         );
     }
@@ -44,7 +44,7 @@ final class EventTypesAndTagsCriterion implements Criterion
             $eventTypes = EventTypes::fromArray($eventTypes);
         }
         if (is_string($tags)) {
-            $tags = Tags::create(Tag::parse($tags));
+            $tags = Tags::single($tags);
         } elseif (is_array($tags)) {
             $tags = Tags::fromArray($tags);
         }
@@ -69,7 +69,7 @@ final class EventTypesAndTagsCriterion implements Criterion
             $eventTypes = EventTypes::fromArray($eventTypes);
         }
         if (is_string($tags)) {
-            $tags = Tags::create(Tag::parse($tags));
+            $tags = Tags::single($tags);
         } elseif (is_array($tags)) {
             $tags = Tags::fromArray($tags);
         }

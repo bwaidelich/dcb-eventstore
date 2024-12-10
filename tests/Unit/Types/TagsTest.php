@@ -19,38 +19,21 @@ final class TagsTest extends TestCase
 
     public function test_single_creates_instance_with_single_id(): void
     {
-        $ids = Tags::create(Tag::create('someKey', 'someId'));
+        $ids = Tags::create(Tag::fromString('someKey:someId'));
         self::assertTagsMatch(['someKey:someId'], $ids);
     }
 
     public function test_create_merges_repeating_key_and_value_pairs(): void
     {
-        $Tag = Tag::create('someKey', 'someValue');
+        $Tag = Tag::fromString('someKey:someValue');
         self::assertTagsMatch(['someKey:someValue'], Tags::create($Tag, $Tag, $Tag));
-    }
-
-    public static function dataProvider_invalidKeys(): iterable
-    {
-        yield [123];
-        yield [true];
-        yield ['validCharactersButExactlyOneCharacterToooooooooLong'];
-        yield ['späcialCharacters'];
-    }
-
-    /**
-     * @dataProvider dataProvider_invalidKeys
-     */
-    public function test_fromArray_fails_if_specified_key_is_not_valid($key): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Tags::fromArray([['key' => $key]]);
     }
 
     public static function dataProvider_invalidValues(): iterable
     {
         yield [123];
         yield [true];
-        yield ['validCharactersButExactlyOneCharacterToooooooooLong'];
+        yield ['validCharactersButExactlyOneCharacterToooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooLong'];
         yield ['späcialCharacters'];
     }
 
@@ -60,12 +43,12 @@ final class TagsTest extends TestCase
     public function test_fromArray_fails_if_specified_value_is_not_valid($value): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Tags::fromArray([['key' => 'tag', 'value' => $value]]);
+        Tags::fromArray([$value]);
     }
 
-    public function test_fromArray_merges_repeating_key_and_value_pairs(): void
+    public function test_fromArray_merges_repeating_tags(): void
     {
-        $tag = Tag::create('someKey', 'someValue');
+        $tag = Tag::fromString('someKey:someValue');
         self::assertTagsMatch(['someKey:someValue'], Tags::fromArray([$tag, $tag]));
     }
 
@@ -83,7 +66,7 @@ final class TagsTest extends TestCase
 
     public function test_fromJson_sorts_values_and_removes_duplicates(): void
     {
-        $tags = Tags::fromJson('[{"key": "foo", "value": "bar"}, {"key": "bar", "value": "foos"}, {"key": "foo", "value": "bar"}, {"key": "foo", "value": "baz"}]');
+        $tags = Tags::fromJson('["foo:bar", "bar:foos", "foo:bar", "foo:baz"]');
         self::assertTagsMatch(['bar:foos', 'foo:bar', 'foo:baz'], $tags);
     }
 
@@ -96,20 +79,20 @@ final class TagsTest extends TestCase
     public function test_single_fails_if_value_is_invalid(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Tags::single('some-key', 'invälid');
+        Tags::single('invälid');
     }
 
     public function test_single_returns_instance_with_single_tag(): void
     {
-        self::assertTagsMatch(['foo:bar'], Tags::single('foo', 'bar'));
+        self::assertTagsMatch(['foo:bar'], Tags::single('foo:bar'));
     }
 
     public function test_intersects_allows_checking_single_tags(): void
     {
         $ids = Tags::fromArray(['foo:bar', 'baz:foos']);
 
-        self::assertTrue($ids->intersect(Tag::create('baz', 'foos')));
-        self::assertFalse($ids->intersect(Tag::create('foo', 'foos')));
+        self::assertTrue($ids->intersect(Tag::fromString('baz:foos')));
+        self::assertFalse($ids->intersect(Tag::fromString('foo:foos')));
     }
 
 
@@ -179,16 +162,16 @@ final class TagsTest extends TestCase
 
     public function test_merge_returns_same_instance_if_values_are_equal(): void
     {
-        $ids1 = Tags::create(Tag::create('foo', 'bar'));
-        $ids2 = Tags::create(Tag::create('foo', 'bar'));
+        $ids1 = Tags::create(Tag::fromString('foo:bar'));
+        $ids2 = Tags::create(Tag::fromString('foo:bar'));
 
         self::assertSame($ids1, $ids1->merge($ids2));
     }
 
     public function test_merge_allows_merging_single_tags(): void
     {
-        $ids1 = Tags::create(Tag::create('foo', 'bar'));
-        $ids2 = Tag::create('foo', 'baz');
+        $ids1 = Tags::create(Tag::fromString('foo:bar'));
+        $ids2 = Tag::fromString('foo:baz');
 
         self::assertTagsMatch(['foo:bar', 'foo:baz'], $ids1->merge($ids2));
     }
@@ -208,60 +191,46 @@ final class TagsTest extends TestCase
         self::assertTagsMatch($expectedResult, Tags::fromArray($ids1)->merge(Tags::fromArray($ids2)));
     }
 
-    public function test_firstOfKey_returns_null_if_no_matching_tag_is_found(): void
-    {
-        $tags = Tags::fromArray(['foo:bar', 'bar:baz']);
-        self::assertNull($tags->firstOfKey('baz'));
-    }
-
-    public function test_firstOfKey_returns_first_matching_tag_if_exists(): void
-    {
-        $tags = Tags::fromArray(['foo:bar', 'bar:baz', 'bar:aaa']);
-        $tag = $tags->firstOfKey('bar');
-        self::assertInstanceOf(Tag::class, $tag);
-        self::assertSame('bar:aaa', $tag->toString());
-    }
-
     public function test_contains_allows_checking_single_tags(): void
     {
         $ids = Tags::fromArray(['foo:bar', 'baz:foos']);
 
-        self::assertTrue($ids->contain(Tag::create('baz', 'foos')));
-        self::assertFalse($ids->contain(Tag::create('foo', 'foos')));
+        self::assertTrue($ids->contain(Tag::fromString('baz:foos')));
+        self::assertFalse($ids->contain(Tag::fromString('foo:foos')));
     }
 
     public static function dataProvider_contains(): iterable
     {
-        yield ['ids' => ['foo:bar'], 'key' => 'foo', 'value' => 'bar', 'expectedResult' => true];
-        yield ['ids' => ['foo:bar', 'bar:baz'], 'key' => 'bar', 'value' => 'baz', 'expectedResult' => true];
+        yield ['tags' => ['foo:bar'], 'tag' => 'foo:bar', 'expectedResult' => true];
+        yield ['tags' => ['foo:bar', 'bar:baz'], 'tag' => 'bar:baz', 'expectedResult' => true];
 
-        yield ['ids' => ['foo:bar'], 'key' => 'key', 'value' => 'bar2', 'expectedResult' => false];
-        yield ['ids' => ['foo:bar'], 'key' => 'bar', 'value' => 'bar', 'expectedResult' => false];
-        yield ['ids' => ['foo:bar', 'baz:foos'], 'key' => 'notFoo', 'value' => 'notBar', 'expectedResult' => false];
+        yield ['tags' => ['foo:bar'], 'tag' => 'key:bar2', 'expectedResult' => false];
+        yield ['tags' => ['foo:bar'], 'tag' => 'bar:bar', 'expectedResult' => false];
+        yield ['tags' => ['foo:bar', 'baz:foos'], 'bar' => 'notFoo:notBar', 'expectedResult' => false];
     }
 
     /**
      * @dataProvider dataProvider_contains
      */
-    public function test_contains(array $ids, string $key, string $value, bool $expectedResult): void
+    public function test_contains(array $tags, string $tag, bool $expectedResult): void
     {
         if ($expectedResult) {
-            self::assertTrue(Tags::fromArray($ids)->contain(Tag::create($key, $value)));
+            self::assertTrue(Tags::fromArray($tags)->contain(Tag::fromString($tag)));
         } else {
-            self::assertFalse(Tags::fromArray($ids)->contain(Tag::create($key, $value)));
+            self::assertFalse(Tags::fromArray($tags)->contain(Tag::fromString($tag)));
         }
     }
 
     public function test_serialized_format(): void
     {
         $tags = Tags::fromJson('["foo:bar", "bar:foos", "foo:bar", "foo:baz"]');
-        self::assertJsonStringEqualsJsonString('[{"key": "bar", "value": "foos"}, {"key": "foo", "value": "bar"}, {"key": "foo", "value": "baz"}]', json_encode($tags));
+        self::assertJsonStringEqualsJsonString('["bar:foos", "foo:bar", "foo:baz"]', json_encode($tags));
     }
 
     // --------------------------------------
 
     private static function assertTagsMatch(array $expected, Tags $actual): void
     {
-        self::assertSame($expected, $actual->toSimpleArray());
+        self::assertSame($expected, $actual->toStrings());
     }
 }
