@@ -7,8 +7,6 @@ namespace Wwwision\DCBEventStore\Types;
 use JsonSerializable;
 use Webmozart\Assert\Assert;
 
-use function explode;
-
 /**
  * Tag that can be attached to an {@see Event}, usually containing some identifier for an entity or concept of the core domain, for example "product:sku123"
  */

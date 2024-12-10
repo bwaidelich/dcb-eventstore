@@ -8,7 +8,7 @@ use JsonSerializable;
 use Webmozart\Assert\Assert;
 
 /**
- * The type of an event, e.g. "CustomerRenamed"
+ * The type of event, e.g. "CustomerRenamed"
  */
 final class EventType implements JsonSerializable
 {

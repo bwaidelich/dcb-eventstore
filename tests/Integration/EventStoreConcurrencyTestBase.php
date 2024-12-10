@@ -7,7 +7,6 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
@@ -21,11 +20,11 @@ use Wwwision\DCBEventStore\Types\ExpectedHighestSequenceNumber;
 use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuerySerializer;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
+
 use function array_map;
 use function array_rand;
 use function array_slice;
@@ -38,6 +37,7 @@ use function random_int;
 use function range;
 use function shuffle;
 use function sprintf;
+
 use const JSON_THROW_ON_ERROR;
 
 #[CoversNothing]
@@ -112,7 +112,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             self::assertGreaterThan($lastSequenceNumber, $sequenceNumber, sprintf('Expected sequence number to be greater than the previous one (%d) but it is %d', $lastSequenceNumber, $sequenceNumber));
             $lastMatchedSequenceNumber = null;
             foreach ($processedEventEnvelopes as $processedEvent) {
-                if ($query !== null && self::queryMatchesEvent($query, $processedEvent->event)) {
+                if ($query !== null && $query->matchesEvent($processedEvent->event)) {
                     $lastMatchedSequenceNumber = $processedEvent->sequenceNumber;
                 }
             }
@@ -172,23 +172,5 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     private static function between(int $min, int $max): int
     {
         return random_int($min, $max);
-    }
-
-    private static function queryMatchesEvent(StreamQuery $query, Event $event): bool
-    {
-        foreach ($query->criteria as $criterion) {
-            if (self::criterionMatchesEvent($criterion, $event)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
-    {
-        return match ($criterion::class) {
-            EventTypesAndTagsCriterion::class => ($criterion->tags === null || $event->tags->containEvery($criterion->tags)) && ($criterion->eventTypes === null || $criterion->eventTypes->contain($event->type)),
-            default => throw new RuntimeException(sprintf('The criterion type "%s" is not supported by the %s', $criterion::class, self::class), 1700302540),
-        };
     }
 }

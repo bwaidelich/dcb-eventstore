@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Helpers;
 
 use DateTimeImmutable;
-use RuntimeException;
 use Wwwision\DCBEventStore\EventStore;
-use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
 use Wwwision\DCBEventStore\Types\Event;
@@ -16,10 +14,8 @@ use Wwwision\DCBEventStore\Types\EventEnvelopes;
 use Wwwision\DCBEventStore\Types\Events;
 use Wwwision\DCBEventStore\Types\ReadOptions;
 use Wwwision\DCBEventStore\Types\SequenceNumber;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\CriterionHashes;
 use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
+
 use function count;
 
 /**
@@ -49,54 +45,44 @@ final class InMemoryEventStore implements EventStore
 
     public function read(StreamQuery $query, ?ReadOptions $options = null): InMemoryEventStream
     {
-        $matchingCriterionHashesBySequenceNumber = [];
-        $eventEnvelopes = $this->eventEnvelopes;
-        foreach ($query->criteria as $criterion) {
-            $onlyLastEvent = $criterion instanceof EventTypesAndTagsCriterion && $criterion->onlyLastEvent;
-            if ($onlyLastEvent) {
-                $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
-            }
-            foreach ($eventEnvelopes as $eventEnvelope) {
-                if (!self::criterionMatchesEvent($criterion, $eventEnvelope->event)) {
-                    continue;
-                }
-                $sequenceNumber = $eventEnvelope->sequenceNumber->value;
-                if (!array_key_exists($sequenceNumber, $matchingCriterionHashesBySequenceNumber)) {
-                    $matchingCriterionHashesBySequenceNumber[$sequenceNumber] = [];
-                }
-                $matchingCriterionHashesBySequenceNumber[$sequenceNumber][] = $criterion->hash();
-                if ($onlyLastEvent) {
-                    continue 2;
-                }
-            }
-        }
-
-        $matchingEventEnvelopes = [];
-        $eventEnvelopes = $this->eventEnvelopes;
         $options ??= ReadOptions::create();
+
+        if ($query->isWildcard()) {
+            $eventEnvelopes = $this->eventEnvelopes;
+        } else {
+            /** @var array<int,EventEnvelope> $matchingEventEnvelopesBySequenceNumber */
+            $matchingEventEnvelopesBySequenceNumber = [];
+            $eventEnvelopes = $this->eventEnvelopes;
+            foreach ($query->criteria as $criterion) {
+                if ($criterion->onlyLastEvent) {
+                    $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
+                }
+                foreach ($eventEnvelopes as $eventEnvelope) {
+                    $sequenceNumber = $eventEnvelope->sequenceNumber->value;
+                    if (!$criterion->matchesEvent($eventEnvelope->event)) {
+                        continue;
+                    }
+                    $matchingEventEnvelopesBySequenceNumber[$sequenceNumber] = $eventEnvelope;
+                    if ($criterion->onlyLastEvent) {
+                        continue 2;
+                    }
+                }
+            }
+            ksort($matchingEventEnvelopesBySequenceNumber, SORT_NUMERIC);
+            $eventEnvelopes = array_values($matchingEventEnvelopesBySequenceNumber);
+        }
         if ($options->backwards) {
             $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
         }
+        $matchingEventEnvelopes = [];
         foreach ($eventEnvelopes as $eventEnvelope) {
             $sequenceNumber = $eventEnvelope->sequenceNumber->value;
             if ($options->from !== null && (($options->backwards && $sequenceNumber > $options->from->value) || (!$options->backwards && $sequenceNumber < $options->from->value))) {
                 continue;
             }
-            if (!array_key_exists($sequenceNumber, $matchingCriterionHashesBySequenceNumber) && !$query->isWildcard()) {
-                continue;
-            }
-
-            $matchingEventEnvelopes[] = $eventEnvelope->withCriterionHashes(CriterionHashes::fromArray($matchingCriterionHashesBySequenceNumber[$sequenceNumber] ?? []));
+            $matchingEventEnvelopes[] = $eventEnvelope;
         }
         return InMemoryEventStream::create(...$matchingEventEnvelopes);
-    }
-
-    private static function criterionMatchesEvent(Criterion $criterion, Event $event): bool
-    {
-        return match ($criterion::class) {
-            EventTypesAndTagsCriterion::class => ($criterion->tags === null || $event->tags->containEvery($criterion->tags)) && ($criterion->eventTypes === null || $criterion->eventTypes->contain($event->type)),
-            default => throw new RuntimeException(sprintf('The criterion type "%s" is not supported by the %s', $criterion::class, self::class), 1700302540),
-        };
     }
 
     public function append(Events|Event $events, AppendCondition $condition): void
@@ -123,17 +109,11 @@ final class InMemoryEventStore implements EventStore
                 new EventEnvelope(
                     $sequenceNumber,
                     new DateTimeImmutable(),
-                    CriterionHashes::none(),
                     $event,
                 )
             );
             $sequenceNumber = $sequenceNumber->next();
         }
         $this->eventEnvelopes = $this->eventEnvelopes->append($newEventEnvelopes);
-    }
-
-    public function resetState(): void
-    {
-        $this->eventEnvelopes = EventEnvelopes::none();
     }
 }

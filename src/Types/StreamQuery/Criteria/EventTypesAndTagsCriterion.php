@@ -5,28 +5,19 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 
 use InvalidArgumentException;
+use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventType;
 use Wwwision\DCBEventStore\Types\EventTypes;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\CriterionHash;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
 
-final class EventTypesAndTagsCriterion implements Criterion
+final class EventTypesAndTagsCriterion
 {
-    private readonly CriterionHash $hash;
-
     private function __construct(
         public readonly EventTypes|null $eventTypes,
         public readonly Tags|null $tags,
         public readonly bool $onlyLastEvent,
     ) {
-        $this->hash = CriterionHash::fromParts(
-            substr(substr(self::class, 0, -9), strrpos(self::class, '\\') + 1),
-            implode(',', $eventTypes?->toStringArray() ?? []),
-            implode(',', $tags?->toStrings() ?? []),
-            $onlyLastEvent ? 'onlyLastEvent' : '',
-        );
     }
 
     /**
@@ -80,8 +71,14 @@ final class EventTypesAndTagsCriterion implements Criterion
         );
     }
 
-    public function hash(): CriterionHash
+    public function matchesEvent(Event $event): bool
     {
-        return $this->hash;
+        if ($this->tags !== null && !$event->tags->containEvery($this->tags)) {
+            return false;
+        }
+        if ($this->eventTypes !== null && !$this->eventTypes->contain($event->type)) {
+            return false;
+        }
+        return true;
     }
 }

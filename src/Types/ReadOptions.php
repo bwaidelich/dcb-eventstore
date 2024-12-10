@@ -22,9 +22,12 @@ final class ReadOptions
     }
 
     public static function create(
-        ?SequenceNumber $from = null,
-        ?bool $backwards = null,
+        SequenceNumber|int|null $from = null,
+        bool|null $backwards = null,
     ): self {
+        if (is_int($from)) {
+            $from = SequenceNumber::fromInteger($from);
+        }
         return new self(
             $from,
             $backwards ?? false,
@@ -32,9 +35,12 @@ final class ReadOptions
     }
 
     public function with(
-        ?SequenceNumber $from = null,
-        ?bool $backwards = null,
+        SequenceNumber|int|null $from = null,
+        bool|null $backwards = null,
     ): self {
+        if (is_int($from)) {
+            $from = SequenceNumber::fromInteger($from);
+        }
         return new self(
             $from ?? $this->from,
             $backwards ?? $this->backwards,

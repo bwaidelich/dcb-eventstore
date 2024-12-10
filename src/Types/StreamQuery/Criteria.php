@@ -9,40 +9,42 @@ use Closure;
 use IteratorAggregate;
 use JsonSerializable;
 use Traversable;
+use Wwwision\DCBEventStore\Types\Event;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
 
 use function array_map;
 
 /**
- * A type-safe set of {@see Criterion} instances
+ * A type-safe set of {@see EventTypesAndTagsCriterion} instances
  *
- * @implements IteratorAggregate<Criterion>
+ * @implements IteratorAggregate<EventTypesAndTagsCriterion>
  */
 final class Criteria implements IteratorAggregate, JsonSerializable
 {
     /**
-     * @var Criterion[]
+     * @var EventTypesAndTagsCriterion[]
      */
     private readonly array $criteria;
 
-    private function __construct(Criterion ...$criteria)
+    private function __construct(EventTypesAndTagsCriterion ...$criteria)
     {
         $this->criteria = $criteria;
     }
 
     /**
-     * @param Criterion[] $criteria
+     * @param EventTypesAndTagsCriterion[] $criteria
      */
     public static function fromArray(array $criteria): self
     {
         return new self(...$criteria);
     }
 
-    public static function create(Criterion ...$criteria): self
+    public static function create(EventTypesAndTagsCriterion ...$criteria): self
     {
         return new self(...$criteria);
     }
 
-    public function with(Criterion $criterion): self
+    public function with(EventTypesAndTagsCriterion $criterion): self
     {
         return new self(...[...$this->criteria, $criterion]);
     }
@@ -58,13 +60,26 @@ final class Criteria implements IteratorAggregate, JsonSerializable
         return new ArrayIterator($this->criteria);
     }
 
+    public function matchesEvent(Event $event): bool
+    {
+        if ($this->isEmpty()) {
+            return true;
+        }
+        foreach ($this->criteria as $criterion) {
+            if ($criterion->matchesEvent($event)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function isEmpty(): bool
     {
         return $this->criteria === [];
     }
 
     /**
-     * @param Closure(Criterion $criterion): mixed $callback
+     * @param Closure(EventTypesAndTagsCriterion $criterion): mixed $callback
      * @return array<string, mixed>
      */
     public function map(Closure $callback): array
@@ -72,13 +87,8 @@ final class Criteria implements IteratorAggregate, JsonSerializable
         return array_map($callback, $this->criteria);
     }
 
-    public function hashes(): CriterionHashes
-    {
-        return CriterionHashes::fromArray(array_map(static fn (Criterion $criterion) => $criterion->hash(), $this->criteria));
-    }
-
     /**
-     * @return Criterion[]
+     * @return EventTypesAndTagsCriterion[]
      */
     public function jsonSerialize(): array
     {

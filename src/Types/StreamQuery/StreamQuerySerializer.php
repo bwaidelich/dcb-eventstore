@@ -9,11 +9,13 @@ use JsonException;
 use RuntimeException;
 use Webmozart\Assert\Assert;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
+
 use function json_decode;
 use function json_encode;
 use function sprintf;
 use function strrpos;
 use function substr;
+
 use const JSON_PRETTY_PRINT;
 
 final class StreamQuerySerializer
@@ -51,14 +53,12 @@ final class StreamQuerySerializer
     }
 
     /**
-     * @param Criterion $criterion
      * @return array{type: string, properties: array<string, mixed>}
      */
-    private static function serializeCriterion(Criterion $criterion): array
+    private static function serializeCriterion(EventTypesAndTagsCriterion $criterion): array
     {
         return [
             'type' => substr(substr($criterion::class, 0, -9), strrpos($criterion::class, '\\') + 1),
-            'hash' => $criterion->hash(),
             'properties' => array_filter(get_object_vars($criterion), static fn ($v) => $v !== null),
         ];
     }
@@ -66,11 +66,10 @@ final class StreamQuerySerializer
     /**
      * @param array<mixed> $criterion
      */
-    private static function unserializeCriterion(array $criterion): Criterion
+    private static function unserializeCriterion(array $criterion): EventTypesAndTagsCriterion
     {
         Assert::keyExists($criterion, 'type');
         Assert::string($criterion['type']);
-        /** @var class-string<Criterion> $criterionClassName */
         $criterionClassName = 'Wwwision\\DCBEventStore\\Types\\StreamQuery\\Criteria\\' . $criterion['type'] . 'Criterion';
         return match ($criterionClassName) {
             EventTypesAndTagsCriterion::class => self::unserializeEventTypesAndTagsCriterion($criterion['properties']),

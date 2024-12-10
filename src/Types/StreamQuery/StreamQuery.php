@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Types\StreamQuery;
 
-use Wwwision\DCBEventStore\Types\Tags;
 use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventTypes;
+use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
+use Wwwision\DCBEventStore\Types\Tags;
 
 /**
  * A Query describing events by their {@see Tags} and/or {@see EventTypes}
@@ -35,7 +36,7 @@ final class StreamQuery
         return new self($this->criteria->merge($criteria));
     }
 
-    public function withCriterion(Criterion $criterion): self
+    public function withCriterion(EventTypesAndTagsCriterion $criterion): self
     {
         return new self($this->criteria->with($criterion));
     }
@@ -43,5 +44,10 @@ final class StreamQuery
     public function isWildcard(): bool
     {
         return $this->criteria->isEmpty();
+    }
+
+    public function matchesEvent(Event $event): bool
+    {
+        return $this->criteria->matchesEvent($event);
     }
 }
