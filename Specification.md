@@ -18,7 +18,7 @@ A potential interface of the `EventStore` (pseudo-code):
 ```
 EventStore {
   read(query: StreamQuery, options?: ReadOptions): EventStream
-  append(events: Events|Event, condition: AppendCondition): SequenceNumber
+  append(events: Events|Event, condition: AppendCondition): void
 }
 ```
 
