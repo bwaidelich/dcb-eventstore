@@ -17,26 +17,31 @@ use function array_merge;
 use function json_decode;
 
 /**
- * A type-safe set of {@see Tag} instances
+ * A type-safe set of {@see Tag} and {@see TagUnion} instances
  *
  * @implements IteratorAggregate<Tag>
  */
 final class Tags implements IteratorAggregate, JsonSerializable
 {
     /**
-     * @param array<string, Tag> $tags
+     * @param array<string, TagUnion|Tag> $tags
      */
     private function __construct(private readonly array $tags)
     {
     }
 
     /**
-     * @param array<Tag|string> $tags
+     * @param array<TagUnion|Tag|string> $tags
      */
     public static function fromArray(array $tags): self
     {
         $convertedTags = [];
         foreach ($tags as $tag) {
+            if ($tag instanceof TagUnion) {
+                $convertedTags[$tag->toString()] = $tag;
+                continue;
+            }
+
             if (!$tag instanceof Tag) {
                 if (!is_string($tag)) {
                     throw new InvalidArgumentException(sprintf('Tags must be of type %s or string, given: %s', Tag::class, get_debug_type($tag)), 1690808045);
@@ -65,14 +70,14 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray([Tag::fromString($value)]);
     }
 
-    public static function create(Tag ...$tags): self
+    public static function create(TagUnion|Tag ...$tags): self
     {
         return self::fromArray($tags);
     }
 
-    public function merge(self|Tag $other): self
+    public function merge(self|TagUnion|Tag $other): self
     {
-        if ($other instanceof Tag) {
+        if (! $other instanceof self) {
             $other = self::create($other);
         }
         if ($other->equals($this)) {
@@ -81,12 +86,15 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return self::fromArray(array_merge($this->tags, $other->tags));
     }
 
-    public function contain(Tag $tag): bool
+    public function contain(TagUnion|Tag $tag): bool
     {
-        return array_key_exists($tag->value, $this->tags);
+        return match (true) {
+            $tag instanceof TagUnion => $this->intersect($tag),
+            $tag instanceof Tag => array_key_exists($tag->value, $this->tags),
+        };
     }
 
-    public function containEvery(Tags $tags): bool
+    public function containEvery(Tags|TagUnion $tags): bool
     {
         foreach ($tags as $tag) {
             if (!$this->contain($tag)) {
@@ -96,12 +104,12 @@ final class Tags implements IteratorAggregate, JsonSerializable
         return true;
     }
 
-    public function intersect(self|Tag $other): bool
+    public function intersect(self|TagUnion|Tag $other): bool
     {
         if ($other instanceof Tag) {
             $other = self::create($other);
         }
-        foreach ($other->tags as $tag) {
+        foreach ($other as $tag) {
             if ($this->contain($tag)) {
                 return true;
             }
@@ -115,15 +123,24 @@ final class Tags implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * @return array<string> in the format ['someKey:someValue', 'someKey:someOtherValue']
+     * @return list<string> in the format ['someKey:someValue', 'someKey:someOtherValue']
      */
     public function toStrings(): array
     {
-        return array_keys($this->tags);
+        $strings = [];
+
+        foreach ($this->tags as $tag) {
+            match (true) {
+                $tag instanceof TagUnion => $strings = [...$strings, ...$tag->tags->toStrings()],
+                $tag instanceof Tag => $strings[] = $tag->value,
+            };
+        }
+
+        return $strings;
     }
 
     /**
-     * @return array<Tag>
+     * @return array<TagUnion|Tag>
      */
     public function jsonSerialize(): array
     {
@@ -131,7 +148,7 @@ final class Tags implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * @return Traversable<Tag>
+     * @return Traversable<TagUnion|Tag>
      */
     public function getIterator(): Traversable
     {
