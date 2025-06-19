@@ -79,8 +79,9 @@ final class Criteria implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * @param Closure(EventTypesAndTagsCriterion $criterion): mixed $callback
-     * @return array<string, mixed>
+     * @template TReturn
+     * @param Closure(EventTypesAndTagsCriterion $criterion): TReturn $callback
+     * @return array<array-key, TReturn>
      */
     public function map(Closure $callback): array
     {

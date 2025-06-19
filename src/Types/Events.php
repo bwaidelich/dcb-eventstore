@@ -49,8 +49,9 @@ final class Events implements IteratorAggregate, JsonSerializable, Countable
     }
 
     /**
-     * @param Closure(Event $event): mixed $callback
-     * @return array<string, mixed>
+     * @template TReturn
+     * @param Closure(Event $event): TReturn $callback
+     * @return array<array-key, TReturn>
      */
     public function map(Closure $callback): array
     {
