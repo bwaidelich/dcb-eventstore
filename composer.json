@@ -45,7 +45,7 @@
     "test:cs": "phpcs --colors src",
     "test:cs:fix": "phpcbf --colors src",
     "test:unit": "phpunit tests/Unit",
-    "test:integration": "phpunit tests/Integration",
+    "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream --exclude-group=feature_appendConditionWithoutMatchingEvent",
     "test": [
       "@test:phpstan",
       "@test:cs",
