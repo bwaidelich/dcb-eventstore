@@ -21,6 +21,7 @@ The following adapter implementations can be used with this package:
 
 - [wwwision/dcb-eventstore-doctrine](https://github.com/bwaidelich/dcb-eventstore-doctrine) – [Doctrine DBAL](https://www.doctrine-project.org/projects/dbal.html) adapter (SQLite, MySQL/MariaDB, PostgreSQL)
 - [ekvedaras/dcb-eventstore-illuminate](https://github.com/ekvedaras/dcb-eventstore-illuminate) – [Laravel database](https://laravel.com/docs/12.x/database) adapter
+- [wwwision/dcb-eventstore-esdb](https://github.com/bwaidelich/dcb-eventstore-esdb) – [EventSourcing Database](https://www.eventsourcingdb.io/) adapter
 
 Feel free to contact me or extend this list via [pull request](https://github.com/bwaidelich/dcb-eventstore/pulls) if you wrote another adapter implementation
 
