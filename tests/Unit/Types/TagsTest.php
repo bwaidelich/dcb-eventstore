@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Tests\Unit\Types;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -37,9 +38,7 @@ final class TagsTest extends TestCase
         yield ['späcialCharacters'];
     }
 
-    /**
-     * @dataProvider dataProvider_invalidValues
-     */
+    #[DataProvider('dataProvider_invalidValues')]
     public function test_fromArray_fails_if_specified_value_is_not_valid($value): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -104,9 +103,7 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar', 'baz:foos'], 'ids2' => ['foo:other', 'baz:other'], 'expectedResult' => false];
     }
 
-    /**
-     * @dataProvider dataProvider_intersects
-     */
+    #[DataProvider('dataProvider_intersects')]
     public function test_intersects(array $ids1, array $ids2, bool $expectedResult): void
     {
         if ($expectedResult) {
@@ -126,9 +123,7 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar', 'baz:foos'], 'ids2' => ['foo:other', 'baz:other'], 'expectedResult' => false];
     }
 
-    /**
-     * @dataProvider dataProvider_equals
-     */
+    #[DataProvider('dataProvider_equals')]
     public function test_equals(array $ids1, array $ids2, bool $expectedResult): void
     {
         if ($expectedResult) {
@@ -177,9 +172,7 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar'], 'ids2' => ['bar:baz'], 'expectedResult' => ['bar:baz', 'foo:bar']];
     }
 
-    /**
-     * @dataProvider dataProvider_merge
-     */
+    #[DataProvider('dataProvider_merge')]
     public function test_merge(array $ids1, array $ids2, array $expectedResult): void
     {
         self::assertTagsMatch($expectedResult, Tags::fromArray($ids1)->merge(Tags::fromArray($ids2)));
@@ -203,9 +196,7 @@ final class TagsTest extends TestCase
         yield ['tags' => ['foo:bar', 'baz:foos'], 'tag' => 'notFoo:notBar', 'expectedResult' => false];
     }
 
-    /**
-     * @dataProvider dataProvider_contains
-     */
+    #[DataProvider('dataProvider_contains')]
     public function test_contains(array $tags, string $tag, bool $expectedResult): void
     {
         if ($expectedResult) {

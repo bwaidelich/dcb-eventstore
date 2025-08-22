@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Unit\Types\StreamQuery;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
 use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
@@ -22,9 +23,7 @@ final class StreamQuerySerializerTest extends TestCase
         yield ['query' => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: ['SomeEventType'], tags: ['foo:bar', 'baz:foos'], onlyLastEvent: true))), 'expectedResult' => '{"version":"1.0","criteria":[{"type":"EventTypesAndTags","properties":{"eventTypes":["SomeEventType"],"tags":["baz:foos","foo:bar"],"onlyLastEvent":true}}]}'];
     }
 
-    /**
-     * @dataProvider dataprovider_serialize
-     */
+    #[DataProvider('dataprovider_serialize')]
     public function test_serialize(StreamQuery $query, string $expectedResult): void
     {
         self::assertJsonStringEqualsJsonString($expectedResult, StreamQuerySerializer::serialize($query));
