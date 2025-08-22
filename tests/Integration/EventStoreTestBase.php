@@ -5,6 +5,7 @@ namespace Wwwision\DCBEventStore\Tests\Integration;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\EventStream;
@@ -151,6 +152,7 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_onlyLastEvent')]
     public function test_read_allows_filtering_of_last_event_by_tag(): void
     {
         $this->appendEvents([
@@ -197,6 +199,7 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_onlyLastEvent')]
     public function test_read_allows_filtering_of_last_event_by_event_types(): void
     {
         $this->appendDummyEvents();
@@ -218,6 +221,7 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_onlyLastEvent')]
     public function test_read_allows_filtering_of_last_event_by_tags_and_event_types(): void
     {
         $this->appendDummyEvents();
@@ -235,35 +239,36 @@ abstract class EventStoreTestBase extends TestCase
         self::assertEventStream($this->stream($query), []);
     }
 
-//    // NOTE: This test is commented out because that guarantee is currently NOT given (it works on SQLite but not on MariaDB and PostgreSQL)
-//    public function test_read_includes_events_that_where_appended_after_iteration_started(): void
-//    {
-//        $this->appendDummyEvents();
-//        $actualEvents = [];
-//        $index = 0;
-//        $eventStream = $this->getEventStore()->read(StreamQuery::wildcard());
-//        foreach ($eventStream as $eventEnvelope) {
-//            $actualEvents[] = self::eventEnvelopeToArray(isset($expectedEvents[$index]) ? array_keys($expectedEvents[$index]) : ['type', 'data', 'tags', 'sequenceNumber'], $eventEnvelope);
-//            if ($eventEnvelope->sequenceNumber->value === 3) {
-//                $this->appendEvents([
-//                    ['data' => 'g', 'type' => 'SomeEventType', 'tags' => ['foo:bar', 'foo:baz']],
-//                    ['data' => 'h', 'type' => 'SomeOtherEventType', 'tags' => ['foo:foos', 'bar:baz']],
-//                ]);
-//            }
-//            $index ++;
-//        }
-//        $expectedEvents = [
-//            ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 1],
-//            ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 2],
-//            ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 3],
-//            ['data' => 'd', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 4],
-//            ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 5],
-//            ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 6],
-//            ['data' => 'g', 'type' => 'SomeEventType', 'tags' => ['foo:bar', 'foo:baz'], 'sequenceNumber' => 7],
-//            ['data' => 'h', 'type' => 'SomeOtherEventType', 'tags' => ['bar:baz', 'foo:foos'], 'sequenceNumber' => 8],
-//        ];
-//        self::assertEquals($expectedEvents, $actualEvents);
-//    }
+    #[Group('feature_liveStream')]
+    public function test_read_includes_events_that_where_appended_after_iteration_started(): void
+    {
+        $this->appendDummyEvents();
+        $expectedEvents = [
+            ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 1],
+            ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 2],
+            ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'sequenceNumber' => 3],
+            ['data' => 'd', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 4],
+            ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 5],
+            ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'sequenceNumber' => 6],
+            ['data' => 'g', 'type' => 'SomeEventType', 'tags' => ['foo:bar', 'foo:baz'], 'sequenceNumber' => 7],
+            ['data' => 'h', 'type' => 'SomeOtherEventType', 'tags' => ['bar:baz', 'foo:foos'], 'sequenceNumber' => 8],
+        ];
+        $actualEvents = [];
+        $index = 0;
+        $eventStream = $this->getEventStore()->read(StreamQuery::wildcard());
+        foreach ($eventStream as $eventEnvelope) {
+            $actualEvents[] = self::eventEnvelopeToArray(isset($expectedEvents[$index]) ? array_keys($expectedEvents[$index]) : ['type', 'data', 'tags', 'sequenceNumber'], $eventEnvelope);
+            if ($eventEnvelope->sequenceNumber->value === 3) {
+                $this->appendEvents([
+                    ['data' => 'g', 'type' => 'SomeEventType', 'tags' => ['foo:bar', 'foo:baz']],
+                    ['data' => 'h', 'type' => 'SomeOtherEventType', 'tags' => ['foo:foos', 'bar:baz']],
+                ]);
+            }
+            $index ++;
+        }
+
+        self::assertEquals($expectedEvents, $actualEvents);
+    }
 
     public function test_read_backwards_returns_all_events_in_descending_order(): void
     {
@@ -297,6 +302,8 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_onlyLastEvent')]
+    #[Group('feature_onlyLastEventCombined')]
     public function test_read_options_dont_affect_matching_events(): void
     {
         $this->appendEvents([
@@ -346,11 +353,21 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_appendConditionWithoutMatchingEvent')]
+    public function test_append_appends_event_if_expected_highest_sequence_number_matches_no_events(): void
+    {
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventTypeThatDidNotOccur', tags: 'baz:foos')));
+        $this->conditionalAppendEvent(['type' => 'SomeEventType', 'data' => 'new event'], $query, ExpectedHighestSequenceNumber::fromInteger(123));
+        self::assertEventStream($this->getEventStore()->read(StreamQuery::wildcard()), [
+            ['data' => 'new event'],
+        ]);
+    }
+
     public function test_append_fails_if_new_events_match_the_specified_query(): void
     {
         $this->appendDummyEvents();
 
-        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos')));
+        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: 'baz:foos')));
         $stream = $this->getEventStore()->read($query, ReadOptions::create(backwards: true));
         $lastEvent = $stream->first();
         self::assertInstanceOf(EventEnvelope::class, $lastEvent);
@@ -362,7 +379,7 @@ abstract class EventStoreTestBase extends TestCase
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedHighestSequenceNumber::fromSequenceNumber($lastSequenceNumber));
     }
 
-    public function test_append_fails_if_no_last_event_id_was_expected_but_query_matches_events(): void
+    public function test_append_fails_if_no_highest_sequence_number_was_expected_but_query_matches_events(): void
     {
         $this->appendDummyEvents();
 
@@ -370,14 +387,6 @@ abstract class EventStoreTestBase extends TestCase
 
         $this->expectException(ConditionalAppendFailed::class);
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedHighestSequenceNumber::none());
-    }
-
-    public function test_append_fails_if_last_event_id_was_expected_but_query_matches_no_events(): void
-    {
-        $query = StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventTypeThatDidNotOccur', tags: 'baz:foos')));
-
-        $this->expectException(ConditionalAppendFailed::class);
-        $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query, ExpectedHighestSequenceNumber::fromInteger(123));
     }
 
     // --- Helpers ---
