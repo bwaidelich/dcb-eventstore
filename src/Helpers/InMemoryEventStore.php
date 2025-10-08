@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Helpers;
 
 use DateTimeImmutable;
+use Psr\Clock\ClockInterface;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Types\AppendCondition;
@@ -33,14 +34,15 @@ final class InMemoryEventStore implements EventStore
 {
     private EventEnvelopes $eventEnvelopes;
 
-    private function __construct()
-    {
+    private function __construct(
+        private readonly ClockInterface $clock,
+    ) {
         $this->eventEnvelopes = EventEnvelopes::none();
     }
 
-    public static function create(): self
+    public static function create(ClockInterface|null $clock = null): self
     {
-        return new self();
+        return new self($clock ?? new SystemClock());
     }
 
     public function read(StreamQuery $query, ?ReadOptions $options = null): InMemoryEventStream
@@ -108,7 +110,7 @@ final class InMemoryEventStore implements EventStore
             $newEventEnvelopes = $newEventEnvelopes->append(
                 new EventEnvelope(
                     $sequenceNumber,
-                    new DateTimeImmutable(),
+                    $this->clock->now(),
                     $event,
                 )
             );
