@@ -8,7 +8,6 @@ use Wwwision\DCBEventStore\Types\Tags;
 use Wwwision\DCBEventStore\Types\Event;
 use Wwwision\DCBEventStore\Types\EventData;
 use Wwwision\DCBEventStore\Types\EventEnvelope;
-use Wwwision\DCBEventStore\Types\EventId;
 use Wwwision\DCBEventStore\Types\Events;
 use Wwwision\DCBEventStore\Types\EventType;
 use Wwwision\DCBEventStore\Types\EventTypes;
@@ -27,7 +26,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(ConditionalAppendFailed::class)]
 #[CoversClass(EventEnvelope::class)]
 #[CoversClass(ExpectedHighestSequenceNumber::class)]
-#[CoversClass(EventId::class)]
 #[CoversClass(EventType::class)]
 #[CoversClass(EventTypes::class)]
 #[CoversClass(Event::class)]

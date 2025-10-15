@@ -232,6 +232,19 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_onlyLastEvent')]
+    public function test_read_allows_filtering_of_last_events_by_tags_and_event_types_with_multiple_criteria(): void
+    {
+        $this->appendDummyEvents();
+        $eventTypesAndTagsCriterion1 = EventTypesAndTagsCriterion::create(eventTypes: 'SomeEventType', tags: 'baz:foos', onlyLastEvent: true);
+        $eventTypesAndTagsCriterion2 = EventTypesAndTagsCriterion::create(eventTypes: 'SomeOtherEventType', tags: 'foo:bar', onlyLastEvent: true);
+        $query = StreamQuery::create(Criteria::create($eventTypesAndTagsCriterion1, $eventTypesAndTagsCriterion2));
+        self::assertEventStream($this->stream($query), [
+            ['sequenceNumber' => 5, 'data' => 'e'],
+            ['sequenceNumber' => 6, 'data' => 'f'],
+        ]);
+    }
+
     public function test_read_allows_fetching_no_events(): void
     {
         $this->appendDummyEvents();
