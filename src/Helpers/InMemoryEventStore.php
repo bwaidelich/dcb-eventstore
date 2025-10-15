@@ -54,10 +54,11 @@ final class InMemoryEventStore implements EventStore
         } else {
             /** @var array<int,EventEnvelope> $matchingEventEnvelopesBySequenceNumber */
             $matchingEventEnvelopesBySequenceNumber = [];
-            $eventEnvelopes = $this->eventEnvelopes;
             foreach ($query->criteria as $criterion) {
                 if ($criterion->onlyLastEvent) {
-                    $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
+                    $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($this->eventEnvelopes)));
+                } else {
+                    $eventEnvelopes = $this->eventEnvelopes;
                 }
                 foreach ($eventEnvelopes as $eventEnvelope) {
                     $sequenceNumber = $eventEnvelope->sequenceNumber->value;
