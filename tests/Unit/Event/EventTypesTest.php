@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Tests\Unit\Types;
+namespace Unit\Event;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Wwwision\DCBEventStore\Types\EventType;
-use Wwwision\DCBEventStore\Types\EventTypes;
+use Wwwision\DCBEventStore\Event\EventType;
+use Wwwision\DCBEventStore\Event\EventTypes;
 
 #[CoversClass(EventTypes::class)]
 #[CoversClass(EventType::class)]

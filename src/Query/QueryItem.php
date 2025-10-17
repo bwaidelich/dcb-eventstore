@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
+namespace Wwwision\DCBEventStore\Query;
 
 use InvalidArgumentException;
-use Wwwision\DCBEventStore\Types\Event;
-use Wwwision\DCBEventStore\Types\EventType;
-use Wwwision\DCBEventStore\Types\EventTypes;
-use Wwwision\DCBEventStore\Types\Tag;
-use Wwwision\DCBEventStore\Types\Tags;
+use Wwwision\DCBEventStore\Event\Event;
+use Wwwision\DCBEventStore\Event\EventType;
+use Wwwision\DCBEventStore\Event\EventTypes;
+use Wwwision\DCBEventStore\Event\Tag;
+use Wwwision\DCBEventStore\Event\Tags;
 
-final class EventTypesAndTagsCriterion
+final class QueryItem
 {
     private function __construct(
         public readonly EventTypes|null $eventTypes,

@@ -6,7 +6,7 @@ namespace Wwwision\DCBEventStore\Helpers;
 
 use Traversable;
 use Wwwision\DCBEventStore\EventStream;
-use Wwwision\DCBEventStore\Types\EventEnvelope;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 
 /**
  * An in-memory implementation of the {@see EventStream} interface that mostly serves testing or debugging purposes
@@ -17,13 +17,13 @@ use Wwwision\DCBEventStore\Types\EventEnvelope;
 final class InMemoryEventStream implements EventStream
 {
     /**
-     * @param EventEnvelope[] $eventEnvelopes
+     * @param SequencedEvent[] $eventEnvelopes
      */
     private function __construct(
         private readonly array $eventEnvelopes,
     ) {}
 
-    public static function create(EventEnvelope ...$events): self
+    public static function create(SequencedEvent ...$events): self
     {
         return new self($events);
     }
@@ -40,7 +40,7 @@ final class InMemoryEventStream implements EventStream
         }
     }
 
-    public function first(): EventEnvelope|null
+    public function first(): SequencedEvent|null
     {
         return $this->eventEnvelopes[array_key_first($this->eventEnvelopes)] ?? null;
     }

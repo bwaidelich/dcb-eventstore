@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Types;
+namespace Wwwision\DCBEventStore\Event;
 
 use Webmozart\Assert\Assert;
 
 /**
  * The global sequence number of an event in the Events Store
  *
- * Note: The sequence number is usually not referred to in user land code, but it can be used to batch process an event stream for example
+ * Note: The sequence position is usually not referred to in user land code, but it can be used to batch process an event stream for example
  */
-final class SequenceNumber
+final class SequencePosition
 {
     private function __construct(public readonly int $value)
     {

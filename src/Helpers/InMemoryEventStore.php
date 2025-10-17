@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Helpers;
 
 use Psr\Clock\ClockInterface;
+use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
+use Wwwision\DCBEventStore\Event\Event;
+use Wwwision\DCBEventStore\Event\Events;
+use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
-use Wwwision\DCBEventStore\Types\AppendCondition;
-use Wwwision\DCBEventStore\Types\Event;
-use Wwwision\DCBEventStore\Types\EventEnvelope;
-use Wwwision\DCBEventStore\Types\EventEnvelopes;
-use Wwwision\DCBEventStore\Types\Events;
-use Wwwision\DCBEventStore\Types\ReadOptions;
-use Wwwision\DCBEventStore\Types\SequenceNumber;
-use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
+use Wwwision\DCBEventStore\Query\Query;
+use Wwwision\DCBEventStore\ReadOptions;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
 
 use function count;
 
@@ -31,12 +31,12 @@ use function count;
  */
 final class InMemoryEventStore implements EventStore
 {
-    private EventEnvelopes $eventEnvelopes;
+    private SequencedEvents $eventEnvelopes;
 
     private function __construct(
         private readonly ClockInterface $clock,
     ) {
-        $this->eventEnvelopes = EventEnvelopes::none();
+        $this->eventEnvelopes = SequencedEvents::none();
     }
 
     public static function create(ClockInterface|null $clock = null): self
@@ -44,28 +44,28 @@ final class InMemoryEventStore implements EventStore
         return new self($clock ?? new SystemClock());
     }
 
-    public function read(StreamQuery $query, ReadOptions|null $options = null): InMemoryEventStream
+    public function read(Query $query, ReadOptions|null $options = null): InMemoryEventStream
     {
         $options ??= ReadOptions::create();
 
-        if ($query->isWildcard()) {
+        if (!$query->hasItems()) {
             $eventEnvelopes = $this->eventEnvelopes;
         } else {
-            /** @var array<int,EventEnvelope> $matchingEventEnvelopesBySequenceNumber */
+            /** @var array<int,SequencedEvent> $matchingEventEnvelopesBySequenceNumber */
             $matchingEventEnvelopesBySequenceNumber = [];
-            foreach ($query->criteria as $criterion) {
-                if ($criterion->onlyLastEvent) {
-                    $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($this->eventEnvelopes)));
+            foreach ($query as $queryItem) {
+                if ($queryItem->onlyLastEvent) {
+                    $eventEnvelopes = SequencedEvents::fromArray(array_reverse(iterator_to_array($this->eventEnvelopes)));
                 } else {
                     $eventEnvelopes = $this->eventEnvelopes;
                 }
                 foreach ($eventEnvelopes as $eventEnvelope) {
-                    $sequenceNumber = $eventEnvelope->sequenceNumber->value;
-                    if (!$criterion->matchesEvent($eventEnvelope->event)) {
+                    $sequenceNumber = $eventEnvelope->position->value;
+                    if (!$queryItem->matchesEvent($eventEnvelope->event)) {
                         continue;
                     }
                     $matchingEventEnvelopesBySequenceNumber[$sequenceNumber] = $eventEnvelope;
-                    if ($criterion->onlyLastEvent) {
+                    if ($queryItem->onlyLastEvent) {
                         continue 2;
                     }
                 }
@@ -74,11 +74,11 @@ final class InMemoryEventStore implements EventStore
             $eventEnvelopes = array_values($matchingEventEnvelopesBySequenceNumber);
         }
         if ($options->backwards) {
-            $eventEnvelopes = EventEnvelopes::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
+            $eventEnvelopes = SequencedEvents::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
         }
         $matchingEventEnvelopes = [];
         foreach ($eventEnvelopes as $eventEnvelope) {
-            $sequenceNumber = $eventEnvelope->sequenceNumber->value;
+            $sequenceNumber = $eventEnvelope->position->value;
             if ($options->from !== null && (($options->backwards && $sequenceNumber > $options->from->value) || (!$options->backwards && $sequenceNumber < $options->from->value))) {
                 continue;
             }
@@ -87,28 +87,27 @@ final class InMemoryEventStore implements EventStore
         return InMemoryEventStream::create(...$matchingEventEnvelopes);
     }
 
-    public function append(Events|Event $events, AppendCondition $condition): void
+    public function append(Events|Event $events, AppendCondition|null $condition = null): void
     {
-        if (!$condition->expectedHighestSequenceNumber->isAny()) {
-            $lastEventEnvelope = $this->read($condition->query, ReadOptions::create(backwards: true))->first();
-            if ($lastEventEnvelope === null) {
-                if (!$condition->expectedHighestSequenceNumber->isNone()) {
-                    throw ConditionalAppendFailed::becauseHighestExpectedSequenceNumberDoesNotMatch($condition->expectedHighestSequenceNumber);
+        if ($condition !== null) {
+            $lastEventEnvelope = $this->read($condition->failIfEventsMatch, ReadOptions::create(backwards: true))->first();
+            if ($lastEventEnvelope !== null) {
+                if ($condition->after === null) {
+                    throw ConditionalAppendFailed::becauseMatchingEventsExist();
                 }
-            } elseif ($condition->expectedHighestSequenceNumber->isNone()) {
-                throw ConditionalAppendFailed::becauseNoEventWhereExpected();
-            } elseif (!$condition->expectedHighestSequenceNumber->matches($lastEventEnvelope->sequenceNumber)) {
-                throw ConditionalAppendFailed::becauseHighestExpectedSequenceNumberDoesNotMatch($condition->expectedHighestSequenceNumber);
+                if ($condition->after->value < $lastEventEnvelope->position->value) {
+                    throw ConditionalAppendFailed::becauseMatchingEventsExistAfterSequencePosition($condition->after);
+                }
             }
         }
-        $sequenceNumber = SequenceNumber::fromInteger(count($this->eventEnvelopes) + 1);
-        $newEventEnvelopes = EventEnvelopes::none();
+        $sequenceNumber = SequencePosition::fromInteger(count($this->eventEnvelopes) + 1);
+        $newEventEnvelopes = SequencedEvents::none();
         if ($events instanceof Event) {
             $events = Events::fromArray([$events]);
         }
         foreach ($events as $event) {
             $newEventEnvelopes = $newEventEnvelopes->append(
-                new EventEnvelope(
+                new SequencedEvent(
                     $sequenceNumber,
                     $this->clock->now(),
                     $event,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Types;
+namespace Wwwision\DCBEventStore\Event;
 
 use ArrayIterator;
 use IteratorAggregate;

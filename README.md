@@ -27,7 +27,7 @@ Feel free to contact me or extend this list via [pull request](https://github.co
 
 ## Specification
 
-See [Specification.md](Specification.md) (work in progress)
+See [dcb.events website](https://dcb.events/specification/)
 
 ## Contribution
 

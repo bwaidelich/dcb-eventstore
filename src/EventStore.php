@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore;
 
+use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
+use Wwwision\DCBEventStore\Event\Event;
+use Wwwision\DCBEventStore\Event\Events;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
-use Wwwision\DCBEventStore\Types\AppendCondition;
-use Wwwision\DCBEventStore\Types\Event;
-use Wwwision\DCBEventStore\Types\Events;
-use Wwwision\DCBEventStore\Types\ReadOptions;
-use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
+use Wwwision\DCBEventStore\Query\Query;
 
 /**
  * Contract for the Events Store adapter
@@ -17,12 +16,12 @@ use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
 interface EventStore
 {
     /**
-     * Returns an event stream that contains events matching the specified {@see StreamQuery} in the order they occurred
+     * Returns an event stream that contains events matching the specified {@see Query} in the order they occurred
      *
-     * @param StreamQuery $query The StreamQuery filter every event has to match
+     * @param Query $query The StreamQuery filter every event has to match
      * @param ReadOptions|null $options optional configuration for this interaction ({@see ReadOptions})
      */
-    public function read(StreamQuery $query, ReadOptions|null $options = null): EventStream;
+    public function read(Query $query, ReadOptions|null $options = null): EventStream;
 
     /**
      * Commits the specified $events if the specified {@see AppendCondition} is satisfied
@@ -30,8 +29,8 @@ interface EventStore
      * NOTE: This is an atomic operation, so either _all_ events will be committed or _none_
      *
      * @param Events|Event $events The events (or a single event) to append to the event stream
-     * @param AppendCondition $condition The condition that has to be met. Note: use {@see AppendCondition::noConstraints()} to skip constraint checks
+     * @param AppendCondition|null $condition The condition that has to be met. If no $condition is specified, events are emitted without any constraint checks
      * @throws ConditionalAppendFailed If specified $condition is violated
      */
-    public function append(Events|Event $events, AppendCondition $condition): void;
+    public function append(Events|Event $events, AppendCondition|null $condition = null): void;
 }

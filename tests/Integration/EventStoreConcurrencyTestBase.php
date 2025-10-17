@@ -8,23 +8,22 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
+use Wwwision\DCBEventStore\Event\Event;
+use Wwwision\DCBEventStore\Event\EventData;
+use Wwwision\DCBEventStore\Event\EventMetadata;
+use Wwwision\DCBEventStore\Event\Events;
+use Wwwision\DCBEventStore\Event\EventType;
+use Wwwision\DCBEventStore\Event\SequencePosition;
+use Wwwision\DCBEventStore\Event\Tag;
+use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
-use Wwwision\DCBEventStore\Types\AppendCondition;
-use Wwwision\DCBEventStore\Types\Event;
-use Wwwision\DCBEventStore\Types\EventData;
-use Wwwision\DCBEventStore\Types\EventEnvelope;
-use Wwwision\DCBEventStore\Types\EventMetadata;
-use Wwwision\DCBEventStore\Types\Events;
-use Wwwision\DCBEventStore\Types\EventType;
-use Wwwision\DCBEventStore\Types\ExpectedHighestSequenceNumber;
-use Wwwision\DCBEventStore\Types\ReadOptions;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria;
-use Wwwision\DCBEventStore\Types\StreamQuery\Criteria\EventTypesAndTagsCriterion;
-use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuery;
-use Wwwision\DCBEventStore\Types\StreamQuery\StreamQuerySerializer;
-use Wwwision\DCBEventStore\Types\Tag;
-use Wwwision\DCBEventStore\Types\Tags;
+use Wwwision\DCBEventStore\Query\Query;
+use Wwwision\DCBEventStore\Query\QueryItem;
+use Wwwision\DCBEventStore\Query\QuerySerializer;
+use Wwwision\DCBEventStore\ReadOptions;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 
 use function array_map;
 use function array_rand;
@@ -76,21 +75,21 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             $tags[] = Tag::fromString($key . ':' . self::either(...$tagValues));
         }
         $queryCreators = [
-            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: self::some($numberOfTags, ...$tags)))),
-            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes)))),
-            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags)))),
-            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)), EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)))),
+            static fn() => Query::fromItems(QueryItem::create(tags: self::some($numberOfTags, ...$tags))),
+            static fn() => Query::fromItems(QueryItem::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes))),
+            static fn() => Query::fromItems(QueryItem::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags))),
+            static fn() => Query::fromItems(QueryItem::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)), QueryItem::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags))),
         ];
 
         for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch++) {
             $query = self::either(...$queryCreators)();
-            $expectedHighestSequenceNumber = $this->getExpectedHighestSequenceNumber($query);
+            $expectedHighestSequenceNumber = $this->getExpectedHighestSequencePosition($query);
 
             $numberOfEvents = self::between(1, $maxNumberOfEventsPerCommit);
             $events = [];
             for ($i = 0; $i < $numberOfEvents; $i++) {
                 $descriptor = $process . '(' . getmypid() . ') ' . $eventBatch . '.' . ($i + 1) . '/' . $numberOfEvents;
-                $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => StreamQuerySerializer::serialize($query), 'expectedHighestSequenceNumber' => $expectedHighestSequenceNumber->isNone() ? null : $expectedHighestSequenceNumber->extractSequenceNumber()->value, 'descriptor' => $descriptor];
+                $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => QuerySerializer::serialize($query), 'expectedHighestSequenceNumber' => $expectedHighestSequenceNumber->isNone() ? null : $expectedHighestSequenceNumber->extractSequenceNumber()->value, 'descriptor' => $descriptor];
                 $events[] = Event::create(type: self::either(...$eventTypes), data: EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), tags: Tags::create(...self::some($numberOfTags, ...$tags)), metadata: EventMetadata::none());
             }
             try {
@@ -103,18 +102,18 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     public static function validateEvents(): void
     {
-        /** @var EventEnvelope[] $processedEventEnvelopes */
+        /** @var SequencedEvent[] $processedEventEnvelopes */
         $processedEventEnvelopes = [];
         $lastSequenceNumber = 0;
-        foreach (static::createEventStore()->read(StreamQuery::wildcard()) as $eventEnvelope) {
+        foreach (static::createEventStore()->read(Query::all()) as $eventEnvelope) {
             $payload = json_decode($eventEnvelope->event->data->value, true, 512, JSON_THROW_ON_ERROR);
-            $query = isset($payload['query']) ? StreamQuerySerializer::unserialize($payload['query']) : null;
-            $sequenceNumber = $eventEnvelope->sequenceNumber->value;
+            $query = isset($payload['query']) ? QuerySerializer::unserialize($payload['query']) : null;
+            $sequenceNumber = $eventEnvelope->position->value;
             self::assertGreaterThan($lastSequenceNumber, $sequenceNumber, sprintf('Expected sequence number to be greater than the previous one (%d) but it is %d', $lastSequenceNumber, $sequenceNumber));
             $lastMatchedSequenceNumber = null;
             foreach ($processedEventEnvelopes as $processedEvent) {
                 if ($query !== null && $query->matchesEvent($processedEvent->event)) {
-                    $lastMatchedSequenceNumber = $processedEvent->sequenceNumber;
+                    $lastMatchedSequenceNumber = $processedEvent->position;
                 }
             }
             if ($query !== null) {
@@ -133,13 +132,13 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     // ----------------------------------------------
 
-    public function getExpectedHighestSequenceNumber(StreamQuery $query): ExpectedHighestSequenceNumber
+    public function getExpectedHighestSequencePosition(Query $query): SequencePosition|null
     {
         $lastEventEnvelope = static::createEventStore()->read($query, ReadOptions::create(backwards: true))->first();
         if ($lastEventEnvelope === null) {
-            return ExpectedHighestSequenceNumber::none();
+            return null;
         }
-        return ExpectedHighestSequenceNumber::fromSequenceNumber($lastEventEnvelope->sequenceNumber);
+        return $lastEventEnvelope->position;
     }
 
     private static function spawn(int $number, \Closure $closure): array
