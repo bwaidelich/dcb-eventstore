@@ -21,8 +21,7 @@ final class InMemoryEventStream implements EventStream
      */
     private function __construct(
         private readonly array $eventEnvelopes,
-    ) {
-    }
+    ) {}
 
     public static function create(EventEnvelope ...$events): self
     {
@@ -41,7 +40,7 @@ final class InMemoryEventStream implements EventStream
         }
     }
 
-    public function first(): ?EventEnvelope
+    public function first(): EventEnvelope|null
     {
         return $this->eventEnvelopes[array_key_first($this->eventEnvelopes)] ?? null;
     }

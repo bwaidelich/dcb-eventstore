@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Helpers;
 
-use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
@@ -45,7 +44,7 @@ final class InMemoryEventStore implements EventStore
         return new self($clock ?? new SystemClock());
     }
 
-    public function read(StreamQuery $query, ?ReadOptions $options = null): InMemoryEventStream
+    public function read(StreamQuery $query, ReadOptions|null $options = null): InMemoryEventStream
     {
         $options ??= ReadOptions::create();
 
@@ -113,7 +112,7 @@ final class InMemoryEventStore implements EventStore
                     $sequenceNumber,
                     $this->clock->now(),
                     $event,
-                )
+                ),
             );
             $sequenceNumber = $sequenceNumber->next();
         }

@@ -1,23 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Unit\Types;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
 use Wwwision\DCBEventStore\Types\Tag;
 use Wwwision\DCBEventStore\Types\Tags;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
-use function json_decode;
+
 use function json_encode;
-use const JSON_THROW_ON_ERROR;
 
 #[CoversClass(Tags::class)]
 #[CoversClass(Tag::class)]
 final class TagsTest extends TestCase
 {
-
     public function test_single_creates_instance_with_single_id(): void
     {
         $ids = Tags::create(Tag::fromString('someKey:someId'));
@@ -87,7 +86,6 @@ final class TagsTest extends TestCase
         self::assertTrue($ids->intersect(Tag::fromString('baz:foos')));
         self::assertFalse($ids->intersect(Tag::fromString('foo:foos')));
     }
-
 
     public static function dataProvider_intersects(): iterable
     {

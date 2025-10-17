@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Integration;
@@ -54,8 +55,7 @@ use function range;
 #[CoversClass(EventTypesAndTagsCriterion::class)]
 abstract class EventStoreTestBase extends TestCase
 {
-
-    private ?EventStore $eventStore = null;
+    private EventStore|null $eventStore = null;
 
     abstract protected function createEventStore(): EventStore;
 
@@ -172,7 +172,6 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
-
     public function test_read_allows_filtering_of_events_by_event_type(): void
     {
         $this->appendDummyEvents();
@@ -277,7 +276,7 @@ abstract class EventStoreTestBase extends TestCase
                     ['data' => 'h', 'type' => 'SomeOtherEventType', 'tags' => ['foo:foos', 'bar:baz']],
                 ]);
             }
-            $index ++;
+            $index++;
         }
 
         self::assertEquals($expectedEvents, $actualEvents);
@@ -416,7 +415,7 @@ abstract class EventStoreTestBase extends TestCase
 
     final protected function appendDummyEvents(): void
     {
-        $this->appendEvents(array_map(static fn ($char) => [
+        $this->appendEvents(array_map(static fn($char) => [
             'data' => $char,
             'type' => match ($char) {
                 'a', 'c', 'e' => 'SomeEventType',
@@ -468,7 +467,7 @@ abstract class EventStoreTestBase extends TestCase
         $index = 0;
         foreach ($eventStream as $eventEnvelope) {
             $actualEvents[] = self::eventEnvelopeToArray(isset($expectedEvents[$index]) ? array_keys($expectedEvents[$index]) : ['type', 'data', 'tags', 'sequenceNumber'], $eventEnvelope);
-            $index ++;
+            $index++;
         }
         self::assertEquals($expectedEvents, $actualEvents);
     }

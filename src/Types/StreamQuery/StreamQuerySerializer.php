@@ -20,9 +20,7 @@ use const JSON_PRETTY_PRINT;
 
 final class StreamQuerySerializer
 {
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function serialize(StreamQuery $streamQuery): string
     {
@@ -59,7 +57,7 @@ final class StreamQuerySerializer
     {
         return [
             'type' => substr(substr($criterion::class, 0, -9), strrpos($criterion::class, '\\') + 1),
-            'properties' => array_filter(get_object_vars($criterion), static fn ($v) => $v !== null),
+            'properties' => array_filter(get_object_vars($criterion), static fn($v) => $v !== null),
         ];
     }
 

@@ -27,7 +27,7 @@
   "require-dev": {
     "roave/security-advisories": "dev-latest",
     "phpstan/phpstan": "^2",
-    "squizlabs/php_codesniffer": "^4.0.x-dev",
+    "friendsofphp/php-cs-fixer": "^3.88",
     "phpunit/phpunit": "^11"
   },
   "autoload": {
@@ -42,8 +42,8 @@
   },
   "scripts": {
     "test:phpstan": "phpstan",
-    "test:cs": "phpcs --colors src",
-    "test:cs:fix": "phpcbf --colors src",
+    "test:cs": "vendor/bin/php-cs-fixer check",
+    "test:cs:fix": "vendor/bin/php-cs-fixer fix",
     "test:unit": "phpunit tests/Unit",
     "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream --exclude-group=feature_appendConditionWithoutMatchingEvent",
     "test": [

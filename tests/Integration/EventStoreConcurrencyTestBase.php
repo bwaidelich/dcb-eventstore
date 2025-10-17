@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Integration;
@@ -67,21 +68,21 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
         $maxNumberOfEventsPerCommit = 5;
         $numberOfEventBatches = 10;
 
-        $eventTypes = self::spawn($numberOfEventTypes, static fn (int $index) => EventType::fromString('Events' . $index));
-        $tagKeys = self::spawn($numberOfTagKeys, static fn (int $index) => 'key' . $index);
-        $tagValues = self::spawn($numberOfTagValues, static fn (int $index) => 'value' . $index);
+        $eventTypes = self::spawn($numberOfEventTypes, static fn(int $index) => EventType::fromString('Events' . $index));
+        $tagKeys = self::spawn($numberOfTagKeys, static fn(int $index) => 'key' . $index);
+        $tagValues = self::spawn($numberOfTagValues, static fn(int $index) => 'value' . $index);
         $tags = [];
         foreach ($tagKeys as $key) {
             $tags[] = Tag::fromString($key . ':' . self::either(...$tagValues));
         }
         $queryCreators = [
-            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: self::some($numberOfTags, ...$tags)))),
-            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes)))),
-            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags)))),
-            static fn () => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)), EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)))),
+            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(tags: self::some($numberOfTags, ...$tags)))),
+            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes)))),
+            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags)))),
+            static fn() => StreamQuery::create(Criteria::create(EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)), EventTypesAndTagsCriterion::create(eventTypes: self::some(1, ...$eventTypes), tags: self::some(1, ...$tags)))),
         ];
 
-        for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch ++) {
+        for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch++) {
             $query = self::either(...$queryCreators)();
             $expectedHighestSequenceNumber = $this->getExpectedHighestSequenceNumber($query);
 
@@ -131,7 +132,6 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     }
 
     // ----------------------------------------------
-
 
     public function getExpectedHighestSequenceNumber(StreamQuery $query): ExpectedHighestSequenceNumber
     {

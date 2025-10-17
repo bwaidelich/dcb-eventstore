@@ -20,5 +20,5 @@ interface EventStream extends IteratorAggregate
      */
     public function getIterator(): Traversable;
 
-    public function first(): ?EventEnvelope;
+    public function first(): EventEnvelope|null;
 }

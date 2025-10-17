@@ -17,8 +17,7 @@ final class Event
         public readonly EventData $data, // opaque, no size limit?
         public readonly Tags $tags,
         public readonly EventMetadata $metadata,
-    ) {
-    }
+    ) {}
 
     /**
      * @param EventData|array<mixed>|string $data

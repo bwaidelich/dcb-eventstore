@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Unit\Types;
@@ -11,7 +12,6 @@ use Wwwision\DCBEventStore\Types\EventMetadata;
 #[CoversClass(EventMetadata::class)]
 final class EventMetadataTest extends TestCase
 {
-
     public function test_none_creates_empty_instance(): void
     {
         self::assertSame([], EventMetadata::none()->value);
