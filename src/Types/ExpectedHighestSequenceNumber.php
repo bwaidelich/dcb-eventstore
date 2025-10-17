@@ -14,9 +14,7 @@ use Wwwision\DCBEventStore\EventStore;
  */
 final class ExpectedHighestSequenceNumber
 {
-    private function __construct(private readonly SequenceNumber|StreamState $sequenceNumber)
-    {
-    }
+    private function __construct(private readonly SequenceNumber|StreamState $sequenceNumber) {}
 
     /**
      * No event must match the specified query
@@ -66,6 +64,6 @@ final class ExpectedHighestSequenceNumber
 
     public function __toString(): string
     {
-        return $this->sequenceNumber instanceof StreamState ? '[' . $this->sequenceNumber->name . ']' : (string)$this->sequenceNumber->value;
+        return $this->sequenceNumber instanceof StreamState ? '[' . $this->sequenceNumber->name . ']' : (string) $this->sequenceNumber->value;
     }
 }

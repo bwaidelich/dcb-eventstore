@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Unit\Types;
@@ -13,7 +14,6 @@ use Wwwision\DCBEventStore\Types\EventTypes;
 #[CoversClass(EventType::class)]
 final class EventTypesTest extends TestCase
 {
-
     public function test_must_not_be_empty(): void
     {
         $this->expectException(InvalidArgumentException::class);

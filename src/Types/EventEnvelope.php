@@ -15,6 +15,5 @@ final class EventEnvelope
         public readonly SequenceNumber $sequenceNumber,
         public readonly DateTimeImmutable $recordedAt,
         public readonly Event $event,
-    ) {
-    }
+    ) {}
 }

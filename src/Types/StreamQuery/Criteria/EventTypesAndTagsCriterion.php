@@ -17,8 +17,7 @@ final class EventTypesAndTagsCriterion
         public readonly EventTypes|null $eventTypes,
         public readonly Tags|null $tags,
         public readonly bool $onlyLastEvent,
-    ) {
-    }
+    ) {}
 
     /**
      * @param EventTypes|array<string|EventType>|string|null $eventTypes

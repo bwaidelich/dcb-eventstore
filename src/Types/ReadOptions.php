@@ -16,10 +16,9 @@ final class ReadOptions
      * @param bool $backwards If true, events will be returned in descending order, otherwise in the order they were appended
      */
     private function __construct(
-        public readonly ?SequenceNumber $from,
+        public readonly SequenceNumber|null $from,
         public bool $backwards,
-    ) {
-    }
+    ) {}
 
     public static function create(
         SequenceNumber|int|null $from = null,

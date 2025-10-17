@@ -18,8 +18,7 @@ final class StreamQuery
 
     private function __construct(
         public readonly Criteria $criteria,
-    ) {
-    }
+    ) {}
 
     public static function create(Criteria $criteria): self
     {

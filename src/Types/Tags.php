@@ -26,9 +26,7 @@ final class Tags implements IteratorAggregate, JsonSerializable
     /**
      * @param array<string, Tag> $tags
      */
-    private function __construct(private readonly array $tags)
-    {
-    }
+    private function __construct(private readonly array $tags) {}
 
     /**
      * @param array<Tag|string> $tags

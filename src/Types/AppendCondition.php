@@ -15,8 +15,7 @@ final class AppendCondition
     public function __construct(
         public readonly StreamQuery $query,
         public readonly ExpectedHighestSequenceNumber $expectedHighestSequenceNumber,
-    ) {
-    }
+    ) {}
 
     public static function noConstraints(): self
     {
