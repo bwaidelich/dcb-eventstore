@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Exceptions;
 
 use RuntimeException;
+use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\EventStore;
-use Wwwision\DCBEventStore\Types\ExpectedHighestSequenceNumber;
 
 /**
  * An exception that is thrown when a {@see EventStore::conditionalAppend()} call has failed
@@ -18,13 +18,13 @@ final class ConditionalAppendFailed extends RuntimeException
         parent::__construct($message);
     }
 
-    public static function becauseNoEventWhereExpected(): self
+    public static function becauseMatchingEventsExist(): self
     {
         return new self('The event store contained events matching the specified query but none were expected');
     }
 
-    public static function becauseHighestExpectedSequenceNumberDoesNotMatch(ExpectedHighestSequenceNumber $expectedHighestSequenceNumber): self
+    public static function becauseMatchingEventsExistAfterSequencePosition(SequencePosition $sequencePosition): self
     {
-        return new self("Expected highest sequence number \"$expectedHighestSequenceNumber\" does not match the actual sequence number");
+        return new self("The event store contained events matching the specified query after the highest expected sequence position of $sequencePosition->value");
     }
 }

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Unit\Types;
+namespace Unit\Event;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Wwwision\DCBEventStore\Types\EventMetadata;
+use Wwwision\DCBEventStore\Event\EventMetadata;
 
 #[CoversClass(EventMetadata::class)]
 final class EventMetadataTest extends TestCase

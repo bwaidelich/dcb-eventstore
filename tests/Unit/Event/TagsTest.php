@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Tests\Unit\Types;
+namespace Unit\Event;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Wwwision\DCBEventStore\Types\Tag;
-use Wwwision\DCBEventStore\Types\Tags;
+use Wwwision\DCBEventStore\Event\Tag;
+use Wwwision\DCBEventStore\Event\Tags;
 
 use function json_encode;
 

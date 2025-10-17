@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Types;
+namespace Wwwision\DCBEventStore\Event;
 
 use InvalidArgumentException;
 use JsonException;
@@ -19,9 +19,7 @@ final class EventMetadata implements JsonSerializable
      */
     private function __construct(
         public readonly array $value,
-    ) {
-        Assert::isMap($value, 'EventMetadata must consist of an associative array with string keys');
-    }
+    ) {}
 
     public static function none(): self
     {
@@ -29,10 +27,11 @@ final class EventMetadata implements JsonSerializable
     }
 
     /**
-     * @param array<string, mixed> $value
+     * @param array<mixed> $value
      */
     public static function fromArray(array $value): self
     {
+        Assert::isMap($value, 'EventMetadata must consist of an associative array with string keys');
         return new self($value);
     }
 
@@ -44,6 +43,7 @@ final class EventMetadata implements JsonSerializable
             throw new InvalidArgumentException(sprintf('Failed to decode JSON to event metadata: %s', $e->getMessage()), 1692197194, $e);
         }
         Assert::isArray($metadata, 'Failed to decode JSON to event metadata');
+        Assert::isMap($metadata, 'EventMetadata must consist of an associative array with string keys');
         return self::fromArray($metadata);
     }
 

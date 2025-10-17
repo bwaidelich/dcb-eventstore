@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Types;
+namespace Wwwision\DCBEventStore\Event;
 
 use ArrayIterator;
 use InvalidArgumentException;
@@ -55,6 +55,7 @@ final class Tags implements IteratorAggregate, JsonSerializable
             throw new InvalidArgumentException(sprintf('Failed to decode JSON to tags: %s', $e->getMessage()), 1690807603, $e);
         }
         Assert::isArray($tags, 'Failed to decode JSON to tags');
+        Assert::allString($tags, 'Failed to decode JSON to tags: Values must be of type string');
         return self::fromArray($tags);
     }
 
