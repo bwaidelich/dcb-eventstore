@@ -14,13 +14,13 @@ use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Helpers\InMemoryEventStore;
-use Wwwision\DCBEventStore\Helpers\InMemoryEventStream;
+use Wwwision\DCBEventStore\Helpers\InMemorySequencedEvents;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 use Wwwision\DCBEventStore\Tests\Integration\EventStoreTestBase;
 
 #[CoversClass(InMemoryEventStore::class)]
-#[CoversClass(InMemoryEventStream::class)]
+#[CoversClass(InMemorySequencedEvents::class)]
 #[CoversClass(Tags::class)]
 #[CoversClass(EventData::class)]
 #[CoversClass(ConditionalAppendFailed::class)]

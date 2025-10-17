@@ -14,7 +14,6 @@ use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
-use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
 
 use function count;
 
@@ -27,94 +26,93 @@ use function count;
  * $eventStore = InMemoryEventStore::create();
  * $eventStore->append($events);
  *
- * $inMemoryStream = $eventStore->stream($query);
+ * $inMemoryStream = $eventStore->read($query);
  */
 final class InMemoryEventStore implements EventStore
 {
-    private SequencedEvents $eventEnvelopes;
+    /**
+     * @var array<SequencedEvent>
+     */
+    private array $sequencedEvents = [];
 
     private function __construct(
         private readonly ClockInterface $clock,
-    ) {
-        $this->eventEnvelopes = SequencedEvents::none();
-    }
+    ) {}
 
     public static function create(ClockInterface|null $clock = null): self
     {
         return new self($clock ?? new SystemClock());
     }
 
-    public function read(Query $query, ReadOptions|null $options = null): InMemoryEventStream
+    public function read(Query $query, ReadOptions|null $options = null): InMemorySequencedEvents
     {
         $options ??= ReadOptions::create();
 
         if (!$query->hasItems()) {
-            $eventEnvelopes = $this->eventEnvelopes;
+            $sequencedEvents = $this->sequencedEvents;
         } else {
-            /** @var array<int,SequencedEvent> $matchingEventEnvelopesBySequenceNumber */
-            $matchingEventEnvelopesBySequenceNumber = [];
+            /** @var array<int,SequencedEvent> $matchingSequencedEventsBySequencePosition */
+            $matchingSequencedEventsBySequencePosition = [];
             foreach ($query as $queryItem) {
                 if ($queryItem->onlyLastEvent) {
-                    $eventEnvelopes = SequencedEvents::fromArray(array_reverse(iterator_to_array($this->eventEnvelopes)));
+                    $sequencedEvents = array_reverse(iterator_to_array($this->sequencedEvents));
                 } else {
-                    $eventEnvelopes = $this->eventEnvelopes;
+                    $sequencedEvents = $this->sequencedEvents;
                 }
-                foreach ($eventEnvelopes as $eventEnvelope) {
-                    $sequenceNumber = $eventEnvelope->position->value;
-                    if (!$queryItem->matchesEvent($eventEnvelope->event)) {
+                foreach ($sequencedEvents as $sequencedEvent) {
+                    $sequencePosition = $sequencedEvent->position->value;
+                    if (!$queryItem->matchesEvent($sequencedEvent->event)) {
                         continue;
                     }
-                    $matchingEventEnvelopesBySequenceNumber[$sequenceNumber] = $eventEnvelope;
+                    $matchingSequencedEventsBySequencePosition[$sequencePosition] = $sequencedEvent;
                     if ($queryItem->onlyLastEvent) {
                         continue 2;
                     }
                 }
             }
-            ksort($matchingEventEnvelopesBySequenceNumber, SORT_NUMERIC);
-            $eventEnvelopes = array_values($matchingEventEnvelopesBySequenceNumber);
+            ksort($matchingSequencedEventsBySequencePosition, SORT_NUMERIC);
+            $sequencedEvents = array_values($matchingSequencedEventsBySequencePosition);
         }
         if ($options->backwards) {
-            $eventEnvelopes = SequencedEvents::fromArray(array_reverse(iterator_to_array($eventEnvelopes)));
+            $sequencedEvents = array_reverse(iterator_to_array($sequencedEvents));
         }
-        $matchingEventEnvelopes = [];
-        foreach ($eventEnvelopes as $eventEnvelope) {
-            $sequenceNumber = $eventEnvelope->position->value;
-            if ($options->from !== null && (($options->backwards && $sequenceNumber > $options->from->value) || (!$options->backwards && $sequenceNumber < $options->from->value))) {
+        $matchingSequencedEvents = [];
+        foreach ($sequencedEvents as $sequencedEvent) {
+            $sequencePosition = $sequencedEvent->position->value;
+            if ($options->from !== null && (($options->backwards && $sequencePosition > $options->from->value) || (!$options->backwards && $sequencePosition < $options->from->value))) {
                 continue;
             }
-            $matchingEventEnvelopes[] = $eventEnvelope;
+            $matchingSequencedEvents[] = $sequencedEvent;
         }
-        return InMemoryEventStream::create(...$matchingEventEnvelopes);
+        return InMemorySequencedEvents::create(...$matchingSequencedEvents);
     }
 
     public function append(Events|Event $events, AppendCondition|null $condition = null): void
     {
         if ($condition !== null) {
-            $lastEventEnvelope = $this->read($condition->failIfEventsMatch, ReadOptions::create(backwards: true))->first();
-            if ($lastEventEnvelope !== null) {
+            $lastSequencedEvent = $this->read($condition->failIfEventsMatch, ReadOptions::create(backwards: true))->first();
+            if ($lastSequencedEvent !== null) {
                 if ($condition->after === null) {
                     throw ConditionalAppendFailed::becauseMatchingEventsExist();
                 }
-                if ($condition->after->value < $lastEventEnvelope->position->value) {
+                if ($condition->after->value < $lastSequencedEvent->position->value) {
                     throw ConditionalAppendFailed::becauseMatchingEventsExistAfterSequencePosition($condition->after);
                 }
             }
         }
-        $sequenceNumber = SequencePosition::fromInteger(count($this->eventEnvelopes) + 1);
-        $newEventEnvelopes = SequencedEvents::none();
+        $sequencePosition = SequencePosition::fromInteger(count($this->sequencedEvents) + 1);
+        $newSequencedEvents = [];
         if ($events instanceof Event) {
             $events = Events::fromArray([$events]);
         }
         foreach ($events as $event) {
-            $newEventEnvelopes = $newEventEnvelopes->append(
-                new SequencedEvent(
-                    $sequenceNumber,
-                    $this->clock->now(),
-                    $event,
-                ),
+            $newSequencedEvents[] = new SequencedEvent(
+                $sequencePosition,
+                $this->clock->now(),
+                $event,
             );
-            $sequenceNumber = $sequenceNumber->next();
+            $sequencePosition = $sequencePosition->next();
         }
-        $this->eventEnvelopes = $this->eventEnvelopes->append($newEventEnvelopes);
+        $this->sequencedEvents = [...$this->sequencedEvents, ...$newSequencedEvents];
     }
 }

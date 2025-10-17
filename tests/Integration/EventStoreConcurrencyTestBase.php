@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Webmozart\Assert\Assert;
 use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
 use Wwwision\DCBEventStore\Event\Event;
 use Wwwision\DCBEventStore\Event\EventData;
@@ -21,7 +22,6 @@ use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\Query\QueryItem;
-use Wwwision\DCBEventStore\Query\QuerySerializer;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 
@@ -83,17 +83,17 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
         for ($eventBatch = 0; $eventBatch < $numberOfEventBatches; $eventBatch++) {
             $query = self::either(...$queryCreators)();
-            $expectedHighestSequenceNumber = $this->getExpectedHighestSequencePosition($query);
+            $expectedHighestSequencePosition = $this->getExpectedHighestSequencePosition($query);
 
             $numberOfEvents = self::between(1, $maxNumberOfEventsPerCommit);
             $events = [];
             for ($i = 0; $i < $numberOfEvents; $i++) {
                 $descriptor = $process . '(' . getmypid() . ') ' . $eventBatch . '.' . ($i + 1) . '/' . $numberOfEvents;
-                $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => QuerySerializer::serialize($query), 'expectedHighestSequenceNumber' => $expectedHighestSequenceNumber->isNone() ? null : $expectedHighestSequenceNumber->extractSequenceNumber()->value, 'descriptor' => $descriptor];
+                $eventData = $i > 0 ? ['descriptor' => $descriptor] : ['query' => self::serializeQuery($query), 'expectedHighestSequencePosition' => $expectedHighestSequencePosition?->value, 'descriptor' => $descriptor];
                 $events[] = Event::create(type: self::either(...$eventTypes), data: EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), tags: Tags::create(...self::some($numberOfTags, ...$tags)), metadata: EventMetadata::none());
             }
             try {
-                static::createEventStore()->append(Events::fromArray($events), new AppendCondition($query, $expectedHighestSequenceNumber));
+                static::createEventStore()->append(Events::fromArray($events), new AppendCondition($query, $expectedHighestSequencePosition));
             } catch (ConditionalAppendFailed $e) {
             }
         }
@@ -102,31 +102,31 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     public static function validateEvents(): void
     {
-        /** @var SequencedEvent[] $processedEventEnvelopes */
-        $processedEventEnvelopes = [];
-        $lastSequenceNumber = 0;
-        foreach (static::createEventStore()->read(Query::all()) as $eventEnvelope) {
-            $payload = json_decode($eventEnvelope->event->data->value, true, 512, JSON_THROW_ON_ERROR);
-            $query = isset($payload['query']) ? QuerySerializer::unserialize($payload['query']) : null;
-            $sequenceNumber = $eventEnvelope->position->value;
-            self::assertGreaterThan($lastSequenceNumber, $sequenceNumber, sprintf('Expected sequence number to be greater than the previous one (%d) but it is %d', $lastSequenceNumber, $sequenceNumber));
-            $lastMatchedSequenceNumber = null;
-            foreach ($processedEventEnvelopes as $processedEvent) {
+        /** @var SequencedEvent[] $processedSequencedEvents */
+        $processedSequencedEvents = [];
+        $lastSequencePosition = 0;
+        foreach (static::createEventStore()->read(Query::all()) as $sequencedEvent) {
+            $payload = json_decode($sequencedEvent->event->data->value, true, 512, JSON_THROW_ON_ERROR);
+            $query = isset($payload['query']) ? self::unserializeQuery($payload['query']) : null;
+            $sequencePosition = $sequencedEvent->position->value;
+            self::assertGreaterThan($lastSequencePosition, $sequencePosition, sprintf('Expected sequence position to be greater than the previous one (%d) but it is %d', $lastSequencePosition, $sequencePosition));
+            $lastMatchedSequencePosition = null;
+            foreach ($processedSequencedEvents as $processedEvent) {
                 if ($query !== null && $query->matchesEvent($processedEvent->event)) {
-                    $lastMatchedSequenceNumber = $processedEvent->position;
+                    $lastMatchedSequencePosition = $processedEvent->position;
                 }
             }
             if ($query !== null) {
-                if ($payload['expectedHighestSequenceNumber'] === null) {
-                    self::assertNull($lastMatchedSequenceNumber, sprintf('Event at sequence number %d was appended with no expectedHighestSequenceNumber but the event "%s" matches the corresponding query', $sequenceNumber, $lastMatchedSequenceNumber?->value));
-                } elseif ($lastMatchedSequenceNumber === null) {
-                    self::fail(sprintf('Events at sequence number %d was appended with expectedHighestSequenceNumber %d but no event matches the corresponding query', $sequenceNumber, $payload['expectedHighestSequenceNumber']));
+                if ($payload['expectedHighestSequencePosition'] === null) {
+                    self::assertNull($lastMatchedSequencePosition, sprintf('Event at sequence position %d was appended with no expectedHighestSequencePosition but the event "%s" matches the corresponding query', $sequencePosition, $lastMatchedSequencePosition?->value));
+                } elseif ($lastMatchedSequencePosition === null) {
+                    self::fail(sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but no event matches the corresponding query', $sequencePosition, $payload['expectedHighestSequencePosition']));
                 } else {
-                    self::assertSame($lastMatchedSequenceNumber->value, $payload['expectedHighestSequenceNumber'], sprintf('Events at sequence number %d was appended with expectedHighestSequenceNumber %d but the last event that matches the corresponding query is "%s"', $sequenceNumber, $payload['expectedHighestSequenceNumber'], $lastMatchedSequenceNumber->value));
+                    self::assertSame($lastMatchedSequencePosition->value, $payload['expectedHighestSequencePosition'], sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but the last event that matches the corresponding query is "%s"', $sequencePosition, $payload['expectedHighestSequencePosition'], $lastMatchedSequencePosition->value));
                 }
             }
-            $lastSequenceNumber = $sequenceNumber;
-            $processedEventEnvelopes[] = $eventEnvelope;
+            $lastSequencePosition = $sequencePosition;
+            $processedSequencedEvents[] = $sequencedEvent;
         }
     }
 
@@ -134,11 +134,11 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     public function getExpectedHighestSequencePosition(Query $query): SequencePosition|null
     {
-        $lastEventEnvelope = static::createEventStore()->read($query, ReadOptions::create(backwards: true))->first();
-        if ($lastEventEnvelope === null) {
+        $lastSequencedEvent = static::createEventStore()->read($query, ReadOptions::create(backwards: true))->first();
+        if ($lastSequencedEvent === null) {
             return null;
         }
-        return $lastEventEnvelope->position;
+        return $lastSequencedEvent->position;
     }
 
     private static function spawn(int $number, \Closure $closure): array
@@ -171,5 +171,20 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
     private static function between(int $min, int $max): int
     {
         return random_int($min, $max);
+    }
+
+    private static function serializeQuery(Query $query): string
+    {
+        return json_encode($query, JSON_THROW_ON_ERROR);
+    }
+
+    private static function unserializeQuery(string $json): Query
+    {
+        $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        Assert::isArray($decoded);
+        if ($decoded === []) {
+            return Query::all();
+        }
+        return Query::fromItems(...array_map(static fn(array $item) => QueryItem::create(...$item), $decoded));
     }
 }

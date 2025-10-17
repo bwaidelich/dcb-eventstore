@@ -21,7 +21,7 @@ interface EventStore
      * @param Query $query The StreamQuery filter every event has to match
      * @param ReadOptions|null $options optional configuration for this interaction ({@see ReadOptions})
      */
-    public function read(Query $query, ReadOptions|null $options = null): EventStream;
+    public function read(Query $query, ReadOptions|null $options = null): SequencedEvents;
 
     /**
      * Commits the specified $events if the specified {@see AppendCondition} is satisfied

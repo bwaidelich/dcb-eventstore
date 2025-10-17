@@ -19,12 +19,12 @@ use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\Event\Tag;
 use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\EventStore;
-use Wwwision\DCBEventStore\EventStream;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\Query\QueryItem;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
+use Wwwision\DCBEventStore\SequencedEvents;
 
 use function array_keys;
 use function array_map;
@@ -381,12 +381,12 @@ abstract class EventStoreTestBase extends TestCase
 
     // --- Helpers ---
 
-    final protected function streamAll(): EventStream
+    final protected function streamAll(): SequencedEvents
     {
         return $this->getEventStore()->read(Query::all());
     }
 
-    final protected function stream(Query $query, ReadOptions|null $options = null): EventStream
+    final protected function stream(Query $query, ReadOptions|null $options = null): SequencedEvents
     {
         return $this->getEventStore()->read($query, $options);
     }
@@ -439,7 +439,7 @@ abstract class EventStoreTestBase extends TestCase
     /**
      * @phpstan-param array<SequencedEventShape> $expectedEvents
      */
-    final protected static function assertEventStream(EventStream $sequencedEvents, array $expectedEvents): void
+    final protected static function assertEventStream(SequencedEvents $sequencedEvents, array $expectedEvents): void
     {
         $actualEvents = [];
         $index = 0;

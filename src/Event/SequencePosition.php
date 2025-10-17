@@ -15,7 +15,7 @@ final class SequencePosition
 {
     private function __construct(public readonly int $value)
     {
-        Assert::natural($this->value, 'sequence number has to be represented with a non-negative integer, given: %d');
+        Assert::natural($this->value, 'sequence position has to be represented with a non-negative integer, given: %d');
     }
 
     public static function fromInteger(int $value): self

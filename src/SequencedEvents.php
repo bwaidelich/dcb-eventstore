@@ -13,7 +13,7 @@ use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
  *
  * @extends IteratorAggregate<SequencedEvent>
  */
-interface EventStream extends IteratorAggregate
+interface SequencedEvents extends IteratorAggregate
 {
     /**
      * @return Traversable<SequencedEvent>
