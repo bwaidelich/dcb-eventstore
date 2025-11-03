@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(vendor/bin/phpstan analyze:*)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
