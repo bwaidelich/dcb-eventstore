@@ -6,6 +6,7 @@ namespace Wwwision\DCBEventStore\Query;
 
 use Closure;
 use IteratorAggregate;
+use RuntimeException;
 use Traversable;
 use Webmozart\Assert\Assert;
 use Wwwision\DCBEventStore\Event\Event;
@@ -40,6 +41,42 @@ final class Query implements IteratorAggregate
     public function withAddedItems(QueryItem ...$items): self
     {
         return new self([...$this->items, ...$items]);
+    }
+
+    public function merge(Query $other): self
+    {
+        if ($this->items === [] || $other->items === []) {
+            throw new RuntimeException('Queries without any constraints cannot be merged!');
+        }
+        $mergedItems = [];
+        $unmergedThis = [];
+        $usedOther = [];
+
+        foreach ($this->items as $item) {
+            $merged = false;
+            foreach ($other->items as $j => $otherItem) {
+                if ($item->canBeMerged($otherItem)) {
+                    $mergedItems[] = $item->merge($otherItem);
+                    $merged = true;
+                    $usedOther[$j] = true;
+                }
+            }
+            if (!$merged) {
+                $unmergedThis[] = $item;
+            }
+        }
+
+        // Add items from this query that weren't merged
+        array_push($mergedItems, ...$unmergedThis);
+
+        // Add items from other query that weren't merged
+        foreach ($other->items as $j => $otherItem) {
+            if (!isset($usedOther[$j])) {
+                $mergedItems[] = $otherItem;
+            }
+        }
+
+        return new self($mergedItems);
     }
 
     public function hasItems(): bool

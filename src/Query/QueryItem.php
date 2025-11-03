@@ -70,6 +70,30 @@ final class QueryItem
         );
     }
 
+    public function canBeMerged(self $other): bool
+    {
+        return $this->onlyLastEvent === $other->onlyLastEvent && $this->tags == $other->tags;
+    }
+
+    public function merge(self $other): self
+    {
+        if ($this->onlyLastEvent !== $other->onlyLastEvent) {
+            throw new InvalidArgumentException('Query items with different values for "onlyLasEvent" flag cannot be merged');
+        }
+        if ($this->tags != $other->tags) {
+            throw new InvalidArgumentException('Query items with tag mismatch cannot be merged');
+        }
+        if ($this->eventTypes !== null) {
+            $mergedEventTypes = $this->eventTypes;
+            if ($other->eventTypes !== null) {
+                $mergedEventTypes = $mergedEventTypes->merge($other->eventTypes);
+            }
+        } else {
+            $mergedEventTypes = $other->eventTypes;
+        }
+        return new self($mergedEventTypes, $this->tags, $this->onlyLastEvent);
+    }
+
     public function matchesEvent(Event $event): bool
     {
         if ($this->tags !== null && !$event->tags->containEvery($this->tags)) {
