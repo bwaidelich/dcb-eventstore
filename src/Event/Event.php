@@ -48,7 +48,7 @@ final class Event
         } elseif ($tags instanceof Tag) {
             $tags = Tags::create($tags);
         } elseif (is_string($tags)) {
-            $tags = Tags::fromJson($tags);
+            $tags = Tags::single($tags);
         } elseif (is_array($tags)) {
             $tags = Tags::fromArray($tags);
         }
@@ -71,7 +71,7 @@ final class Event
         EventMetadata|array|string|null $metadata = null,
     ): self {
         if (is_string($tags)) {
-            $tags = Tags::fromJson($tags);
+            $tags = Tags::single($tags);
         } elseif (is_array($tags)) {
             $tags = Tags::fromArray($tags);
         }
