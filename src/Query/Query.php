@@ -49,6 +49,9 @@ final class Query implements IteratorAggregate
 
     public function matchesEvent(Event $event): bool
     {
+        if ($this->items === []) {
+            return true;
+        }
         foreach ($this->items as $item) {
             if ($item->matchesEvent($event)) {
                 return true;
