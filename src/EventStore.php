@@ -9,6 +9,7 @@ use Wwwision\DCBEventStore\Event\Event;
 use Wwwision\DCBEventStore\Event\Events;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Query\Query;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
 
 /**
  * Contract for the Events Store adapter

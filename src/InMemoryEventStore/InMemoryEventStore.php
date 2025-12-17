@@ -15,6 +15,7 @@ use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
 
 use function count;
 
@@ -50,7 +51,7 @@ final class InMemoryEventStore implements EventStore
         });
     }
 
-    public function read(Query $query, ReadOptions|null $options = null): InMemorySequencedEvents
+    public function read(Query $query, ReadOptions|null $options = null): SequencedEvents
     {
         $options ??= ReadOptions::create();
 
@@ -93,7 +94,7 @@ final class InMemoryEventStore implements EventStore
         if ($options->limit !== null) {
             $matchingSequencedEvents = array_slice($matchingSequencedEvents, 0, $options->limit);
         }
-        return InMemorySequencedEvents::create(...$matchingSequencedEvents);
+        return SequencedEvents::fromArray($matchingSequencedEvents);
     }
 
     public function append(Events|Event $events, AppendCondition|null $condition = null): void
