@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Integration;
 
+use Closure;
+use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
 use Wwwision\DCBEventStore\Event\Event;
 use Wwwision\DCBEventStore\Event\EventData;
@@ -24,7 +27,7 @@ use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\Query\QueryItem;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
-use Wwwision\DCBEventStore\SequencedEvents;
+use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
 
 use function array_keys;
 use function array_map;
@@ -32,8 +35,8 @@ use function in_array;
 use function range;
 
 /**
- * @phpstan-type EventShape array{type?: string, data?: string, tags?: array<string>}
- * @phpstan-type SequencedEventShape array{type?: string, data?: string, tags?: array<string>, position?: int}
+ * @phpstan-type EventShape array{type?: string, data?: string, tags?: array<string>, metadata?: array<string, mixed>}
+ * @phpstan-type SequencedEventShape array{type?: string, data?: string, tags?: array<string>, position?: int, metadata?: array<string, mixed>, recordedAt?: DateTimeImmutable}
  */
 #[CoversClass(Tag::class)]
 #[CoversClass(Tags::class)]
@@ -53,17 +56,32 @@ abstract class EventStoreTestBase extends TestCase
 {
     private EventStore|null $eventStore = null;
 
+    private DateTimeImmutable|null $now = null;
+
+    final protected function getTestClock(): ClockInterface
+    {
+        $nowClosure = fn() => $this->now;
+        return new readonly class ($nowClosure) implements ClockInterface {
+            /** @param Closure(): (DateTimeImmutable|null) $nowClosure */
+            public function __construct(private Closure $nowClosure) {}
+            public function now(): DateTimeImmutable
+            {
+                return ($this->nowClosure)() ?? new DateTimeImmutable();
+            }
+        };
+    }
+
     abstract protected function createEventStore(): EventStore;
 
     public function test_read_returns_an_empty_stream_if_no_events_were_published(): void
     {
-        self::assertEventStream($this->getEventStore()->read(Query::all()), []);
+        self::assertEventStream($this->streamAll(), []);
     }
 
     public function test_read_returns_all_events(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all()), [
+        self::assertEventStream($this->streamAll(), [
             ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1],
             ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'position' => 2],
             ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'position' => 3],
@@ -76,17 +94,27 @@ abstract class EventStoreTestBase extends TestCase
     public function test_read_allows_to_specify_minimum_position(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all(), ReadOptions::create(from: SequencePosition::fromInteger(4))), [
+        self::assertEventStream($this->streamAll(ReadOptions::create(from: SequencePosition::fromInteger(4))), [
             ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
             ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 5],
             ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 6],
         ]);
     }
 
+    public function test_read_allows_to_specify_limit(): void
+    {
+        $this->appendDummyEvents();
+        self::assertEventStream($this->streamAll(ReadOptions::create(limit: 3)), [
+            ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1],
+            ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'position' => 2],
+            ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'position' => 3],
+        ]);
+    }
+
     public function test_read_returns_an_empty_stream_if_minimum_position_exceeds_highest(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all(), ReadOptions::create(from: SequencePosition::fromInteger(123))), []);
+        self::assertEventStream($this->streamAll(ReadOptions::create(from: SequencePosition::fromInteger(123))), []);
     }
 
     public function test_read_allows_filtering_of_events_by_tag(): void
@@ -218,6 +246,7 @@ abstract class EventStoreTestBase extends TestCase
     }
 
     #[Group('feature_onlyLastEvent')]
+    #[Group('feature_onlyLastEventCombined')]
     public function test_read_allows_filtering_of_last_events_by_tags_and_event_types_with_multiple_query_items(): void
     {
         $this->appendDummyEvents();
@@ -251,7 +280,7 @@ abstract class EventStoreTestBase extends TestCase
         ];
         $actualEvents = [];
         $index = 0;
-        foreach ($this->getEventStore()->read(Query::all()) as $sequencedEvent) {
+        foreach ($this->streamAll() as $sequencedEvent) {
             $actualEvents[] = self::sequencedEventToArray(isset($expectedEvents[$index]) ? array_keys($expectedEvents[$index]) : ['type', 'data', 'tags', 'position'], $sequencedEvent);
             if ($sequencedEvent->position->value === 3) {
                 $this->appendEvents([
@@ -265,10 +294,11 @@ abstract class EventStoreTestBase extends TestCase
         self::assertEquals($expectedEvents, $actualEvents);
     }
 
+    #[Group('feature_readBackwards')]
     public function test_read_backwards_returns_all_events_in_descending_order(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all(), ReadOptions::create(backwards: true)), [
+        self::assertEventStream($this->streamAll(ReadOptions::create(backwards: true)), [
             ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 6],
             ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 5],
             ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
@@ -278,10 +308,11 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_readBackwards')]
     public function test_read_backwards_allows_to_specify_maximum_position(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all(), ReadOptions::create(from: SequencePosition::fromInteger(4), backwards: true)), [
+        self::assertEventStream($this->streamAll(ReadOptions::create(from: SequencePosition::fromInteger(4), backwards: true)), [
             ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
             ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'position' => 3],
             ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'position' => 2],
@@ -289,16 +320,29 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    #[Group('feature_readBackwards')]
+    public function test_read_backwards_allows_to_specify_limit(): void
+    {
+        $this->appendDummyEvents();
+        self::assertEventStream($this->streamAll(ReadOptions::create(limit: 3, backwards: true)), [
+            ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 6],
+            ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 5],
+            ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
+        ]);
+    }
+
+    #[Group('feature_readBackwards')]
     public function test_read_backwards_returns_single_event_if_maximum_position_is_one(): void
     {
         $this->appendDummyEvents();
-        self::assertEventStream($this->getEventStore()->read(Query::all(), ReadOptions::create(from: SequencePosition::fromInteger(1), backwards: true)), [
+        self::assertEventStream($this->streamAll(ReadOptions::create(from: SequencePosition::fromInteger(1), backwards: true)), [
             ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1],
         ]);
     }
 
     #[Group('feature_onlyLastEvent')]
     #[Group('feature_onlyLastEventCombined')]
+    #[Group('feature_readBackwards')]
     public function test_read_options_dont_affect_matching_events(): void
     {
         $this->appendEvents([
@@ -327,17 +371,17 @@ abstract class EventStoreTestBase extends TestCase
         self::assertEventStream($this->stream($query, ReadOptions::create(from: 3, backwards: true)), array_slice(array_reverse($expectedEvents), 2));
     }
 
+    #[Group('feature_readBackwards')]
     public function test_append_appends_event_if_expected_highest_sequence_position_matches(): void
     {
         $this->appendDummyEvents();
 
         $query = Query::fromItems(QueryItem::create(eventTypes: 'SomeEventType', tags: 'baz:foos'));
-        $stream = $this->getEventStore()->read($query, ReadOptions::create(backwards: true));
-        $lastEvent = $stream->first();
+        $lastEvent = $this->stream($query, ReadOptions::create(backwards: true))->first();
         self::assertInstanceOf(SequencedEvent::class, $lastEvent);
         $this->conditionalAppendEvent(['type' => 'SomeEventType', 'data' => 'new event', 'tags' => ['baz:foos']], $query, $lastEvent->position);
 
-        self::assertEventStream($this->getEventStore()->read($query), [
+        self::assertEventStream($this->stream($query), [
             ['data' => 'a'],
             ['data' => 'e'],
             ['data' => 'new event'],
@@ -349,18 +393,18 @@ abstract class EventStoreTestBase extends TestCase
     {
         $query = Query::fromItems(QueryItem::create(eventTypes: 'SomeEventTypeThatDidNotOccur', tags: 'baz:foos'));
         $this->conditionalAppendEvent(['type' => 'SomeEventType', 'data' => 'new event'], $query, SequencePosition::fromInteger(123));
-        self::assertEventStream($this->getEventStore()->read(Query::all()), [
+        self::assertEventStream($this->streamAll(), [
             ['data' => 'new event'],
         ]);
     }
 
+    #[Group('feature_readBackwards')]
     public function test_append_fails_if_new_events_match_the_specified_query(): void
     {
         $this->appendDummyEvents();
 
         $query = Query::fromItems(QueryItem::create(tags: 'baz:foos'));
-        $stream = $this->getEventStore()->read($query, ReadOptions::create(backwards: true));
-        $lastEvent = $stream->first();
+        $lastEvent = $this->stream($query, ReadOptions::create(backwards: true))->first();
         self::assertInstanceOf(SequencedEvent::class, $lastEvent);
 
         $this->appendEvent(['type' => 'SomeEventType', 'tags' => ['baz:foos']]);
@@ -379,11 +423,32 @@ abstract class EventStoreTestBase extends TestCase
         $this->conditionalAppendEvent(['type' => 'DoesNotMatter'], $query);
     }
 
+    #[Group('feature_metadata')]
+    public function test_add_and_read_metadata(): void
+    {
+        $this->appendEvent(['metadata' => ['foo' => 'bar', 'baz' => 'FOOS']]);
+        self::assertEventStream($this->streamAll(), [
+            ['metadata' => ['foo' => 'bar', 'baz' => 'FOOS'], 'position' => 1],
+        ]);
+    }
+
+    #[Group('feature_recordedAt')]
+    public function test_appends_sets_recordedAt_timestamp(): void
+    {
+        $this->now = new DateTimeImmutable('@123456789');
+        $expectedRecordedAt = $this->now;
+        $this->appendEvent([]);
+        $this->now = new DateTimeImmutable('@987654321');
+        self::assertEventStream($this->streamAll(), [
+            ['recordedAt' => $expectedRecordedAt, 'position' => 1],
+        ]);
+    }
+
     // --- Helpers ---
 
-    final protected function streamAll(): SequencedEvents
+    final protected function streamAll(ReadOptions|null $options = null): SequencedEvents
     {
-        return $this->getEventStore()->read(Query::all());
+        return $this->getEventStore()->read(Query::all(), $options);
     }
 
     final protected function stream(Query $query, ReadOptions|null $options = null): SequencedEvents
@@ -413,7 +478,7 @@ abstract class EventStoreTestBase extends TestCase
     }
 
     /**
-     * @phpstan-param EventShape $event
+     * @phpstan-param EventShape[] $events
      */
     final protected function appendEvents(array $events): void
     {
@@ -466,7 +531,7 @@ abstract class EventStoreTestBase extends TestCase
      */
     private static function sequencedEventToArray(array $keys, SequencedEvent $sequencedEvent): array
     {
-        $supportedKeys = ['type', 'data', 'tags', 'position'];
+        $supportedKeys = ['type', 'data', 'tags', 'position', 'metadata', 'recordedAt'];
         $unsupportedKeys = array_diff($keys, $supportedKeys);
         if ($unsupportedKeys !== []) {
             throw new InvalidArgumentException(sprintf('Invalid key(s) "%s" for expected event. Allowed keys are: "%s"', implode('", "', $unsupportedKeys), implode('", "', $supportedKeys)), 1684668588);
@@ -475,7 +540,9 @@ abstract class EventStoreTestBase extends TestCase
             'type' => $sequencedEvent->event->type->value,
             'data' => $sequencedEvent->event->data->value,
             'tags' => $sequencedEvent->event->tags->toStrings(),
+            'metadata' => $sequencedEvent->event->metadata->value,
             'position' => $sequencedEvent->position->value,
+            'recordedAt' => $sequencedEvent->recordedAt,
         ];
         foreach (array_diff($supportedKeys, $keys) as $unusedKey) {
             unset($actualAsArray[$unusedKey]);

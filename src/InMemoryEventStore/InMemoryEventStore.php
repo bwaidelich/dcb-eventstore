@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Helpers;
+namespace Wwwision\DCBEventStore\InMemoryEventStore;
 
+use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
 use Wwwision\DCBEventStore\Event\Event;
@@ -41,7 +42,12 @@ final class InMemoryEventStore implements EventStore
 
     public static function create(ClockInterface|null $clock = null): self
     {
-        return new self($clock ?? new SystemClock());
+        return new self($clock ?? new class implements ClockInterface {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable();
+            }
+        });
     }
 
     public function read(Query $query, ReadOptions|null $options = null): InMemorySequencedEvents
@@ -83,6 +89,9 @@ final class InMemoryEventStore implements EventStore
                 continue;
             }
             $matchingSequencedEvents[] = $sequencedEvent;
+        }
+        if ($options->limit !== null) {
+            $matchingSequencedEvents = array_slice($matchingSequencedEvents, 0, $options->limit);
         }
         return InMemorySequencedEvents::create(...$matchingSequencedEvents);
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wwwision\DCBEventStore\Tests\Integration\Helper;
+namespace Wwwision\DCBEventStore\Tests\Integration\InMemoryEventStore;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use Wwwision\DCBEventStore\Event\Event;
@@ -13,14 +13,12 @@ use Wwwision\DCBEventStore\Event\EventTypes;
 use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
-use Wwwision\DCBEventStore\Helpers\InMemoryEventStore;
-use Wwwision\DCBEventStore\Helpers\InMemorySequencedEvents;
+use Wwwision\DCBEventStore\InMemoryEventStore\InMemoryEventStore;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 use Wwwision\DCBEventStore\Tests\Integration\EventStoreTestBase;
 
 #[CoversClass(InMemoryEventStore::class)]
-#[CoversClass(InMemorySequencedEvents::class)]
 #[CoversClass(Tags::class)]
 #[CoversClass(EventData::class)]
 #[CoversClass(ConditionalAppendFailed::class)]
@@ -35,7 +33,7 @@ final class InMemoryEventStoreTest extends EventStoreTestBase
 {
     protected function createEventStore(): InMemoryEventStore
     {
-        return InMemoryEventStore::create();
+        return InMemoryEventStore::create($this->getTestClock());
     }
 
 }
