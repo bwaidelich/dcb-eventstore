@@ -53,7 +53,7 @@ final class EventMetadataTest extends TestCase
 
     public function test_jsonSerializable(): void
     {
-        $actualResult = json_encode(EventMetadata::none()->with('foo', 'bar')->with('bar', 'baz'));
+        $actualResult = json_encode(EventMetadata::none()->with('foo', 'bar')->with('bar', 'baz'), JSON_THROW_ON_ERROR);
         self::assertJsonStringEqualsJsonString('{"foo": "bar", "bar": "baz"}', $actualResult);
     }
 

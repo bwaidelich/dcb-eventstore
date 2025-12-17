@@ -1,6 +1,6 @@
 # Dynamic Consistency Boundary Event Store
 
-Implementation of the Dynamic Consistency Boundary pattern [described by Sara Pellegrini](https://sara.event-thinking.io/2023/04/kill-aggregate-chapter-1-I-am-here-to-kill-the-aggregate.html)
+Interfaces and types for Event Stores implementing [Dynamic Consistency Boundaries](https://dcb.events/).
 
 The main purpose of this package is to explore the idea, find potential pitfalls and to spread the word.
 It merely provides interfaces and core models to implement the DCB pattern.

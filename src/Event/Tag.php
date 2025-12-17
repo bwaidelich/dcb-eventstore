@@ -25,6 +25,17 @@ final class Tag implements JsonSerializable
         return new self($value);
     }
 
+    public function merge(self|Tags $other): Tag|Tags
+    {
+        if ($other instanceof self) {
+            if ($other->equals($this)) {
+                return $this;
+            }
+            return Tags::create($this, $other);
+        }
+        return Tags::create($this)->merge($other);
+    }
+
     public function equals(self $other): bool
     {
         return $other->value === $this->value;

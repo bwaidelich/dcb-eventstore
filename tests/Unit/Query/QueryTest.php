@@ -45,18 +45,22 @@ final class QueryTest extends TestCase
         self::assertSame([$item1, $item2, $item3], iterator_to_array($query));
     }
 
-    public function test_merge_fails_if_source_is_wildcard_query(): void
+    public function test_merge_returns_wildcard_query_if_source_and_argument_are_wildcard_queries(): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Queries without any constraints cannot be merged!');
-        Query::all()->merge(Query::fromItems(QueryItem::create(eventTypes: 'SomeEventType', tags: 'some-tag')));
+        $mergedQuery = Query::all()->merge(Query::all());
+        self::assertFalse($mergedQuery->hasItems());
     }
 
-    public function test_merge_fails_if_argument_is_wildcard_query(): void
+    public function test_merge_returns_wildcard_query_if_source_is_wildcard_query(): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Queries without any constraints cannot be merged!');
-        Query::fromItems(QueryItem::create(eventTypes: 'SomeEventType', tags: 'some-tag'))->merge(Query::all());
+        $mergedQuery = Query::all()->merge(Query::fromItems(QueryItem::create(eventTypes: 'SomeEventType', tags: 'some-tag')));
+        self::assertFalse($mergedQuery->hasItems());
+    }
+
+    public function test_merge_returns_wildcard_query_if_argument_is_wildcard_query(): void
+    {
+        $mergedQuery = Query::fromItems(QueryItem::create(eventTypes: 'SomeEventType', tags: 'some-tag'))->merge(Query::all());
+        self::assertFalse($mergedQuery->hasItems());
     }
 
     /**

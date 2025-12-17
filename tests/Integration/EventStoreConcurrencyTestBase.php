@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\Tests\Integration;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Webmozart\Assert\Assert;
 use Wwwision\DCBEventStore\AppendCondition\AppendCondition;
 use Wwwision\DCBEventStore\Event\Event;
@@ -49,6 +51,9 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
 
     abstract protected static function createEventStore(): EventStore;
 
+    /**
+     * @return iterable<int[]>
+     */
     public static function consistency_dataProvider(): iterable
     {
         for ($i = 0; $i < 40; $i++) {
@@ -67,14 +72,18 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
         $maxNumberOfEventsPerCommit = 5;
         $numberOfEventBatches = 10;
 
+        /** @var EventType[] $eventTypes */
         $eventTypes = self::spawn($numberOfEventTypes, static fn(int $index) => EventType::fromString('Events' . $index));
+        /** @var string[] $tagKeys */
         $tagKeys = self::spawn($numberOfTagKeys, static fn(int $index) => 'key' . $index);
+        /** @var string[] $tagValues */
         $tagValues = self::spawn($numberOfTagValues, static fn(int $index) => 'value' . $index);
         $tags = [];
         foreach ($tagKeys as $key) {
             $tags[] = Tag::fromString($key . ':' . self::either(...$tagValues));
         }
         $queryCreators = [
+            static fn() => Query::all(),
             static fn() => Query::fromItems(QueryItem::create(tags: self::some($numberOfTags, ...$tags))),
             static fn() => Query::fromItems(QueryItem::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes))),
             static fn() => Query::fromItems(QueryItem::create(eventTypes: self::some($numberOfEventTypes, ...$eventTypes), tags: self::some($numberOfTags, ...$tags))),
@@ -97,17 +106,24 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
             } catch (ConditionalAppendFailed $e) {
             }
         }
-        self::assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
-    public static function validateEvents(): void
+    final public static function validateEvents(): void
     {
         /** @var SequencedEvent[] $processedSequencedEvents */
         $processedSequencedEvents = [];
         $lastSequencePosition = 0;
         foreach (static::createEventStore()->read(Query::all()) as $sequencedEvent) {
             $payload = json_decode($sequencedEvent->event->data->value, true, 512, JSON_THROW_ON_ERROR);
-            $query = isset($payload['query']) ? self::unserializeQuery($payload['query']) : null;
+            Assert::isArray($payload);
+            if (isset($payload['query'])) {
+                Assert::string($payload['query']);
+                $query = self::unserializeQuery($payload['query']);
+            } else {
+                $query = null;
+            }
+
             $sequencePosition = $sequencedEvent->position->value;
             self::assertGreaterThan($lastSequencePosition, $sequencePosition, sprintf('Expected sequence position to be greater than the previous one (%d) but it is %d', $lastSequencePosition, $sequencePosition));
             $lastMatchedSequencePosition = null;
@@ -117,12 +133,17 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
                 }
             }
             if ($query !== null) {
+                Assert::keyExists($payload, 'expectedHighestSequencePosition');
                 if ($payload['expectedHighestSequencePosition'] === null) {
-                    self::assertNull($lastMatchedSequencePosition, sprintf('Event at sequence position %d was appended with no expectedHighestSequencePosition but the event "%s" matches the corresponding query', $sequencePosition, $lastMatchedSequencePosition?->value));
+                    if ($lastMatchedSequencePosition !== null) {
+                        throw new RuntimeException(sprintf('Event at sequence position %d was appended with no expectedHighestSequencePosition but the event "%s" matches the corresponding query', $sequencePosition, $lastMatchedSequencePosition->value));
+                    }
                 } elseif ($lastMatchedSequencePosition === null) {
-                    self::fail(sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but no event matches the corresponding query', $sequencePosition, $payload['expectedHighestSequencePosition']));
-                } else {
-                    self::assertSame($lastMatchedSequencePosition->value, $payload['expectedHighestSequencePosition'], sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but the last event that matches the corresponding query is "%s"', $sequencePosition, $payload['expectedHighestSequencePosition'], $lastMatchedSequencePosition->value));
+                    Assert::integer($payload['expectedHighestSequencePosition']);
+                    throw new RuntimeException(sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but no event matches the corresponding query', $sequencePosition, $payload['expectedHighestSequencePosition']));
+                } elseif ($lastMatchedSequencePosition->value !== $payload['expectedHighestSequencePosition']) {
+                    Assert::integer($payload['expectedHighestSequencePosition']);
+                    throw new RuntimeException(sprintf('Events at sequence position %d was appended with expectedHighestSequencePosition %d but the last event that matches the corresponding query is "%s"', $sequencePosition, $payload['expectedHighestSequencePosition'], $lastMatchedSequencePosition->value));
                 }
             }
             $lastSequencePosition = $sequencePosition;
@@ -141,6 +162,11 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
         return $lastSequencedEvent->position;
     }
 
+    /**
+     * @template T
+     * @param Closure(int): T $closure
+     * @return array<T>
+     */
     private static function spawn(int $number, \Closure $closure): array
     {
         return array_map($closure, range(1, $number));
@@ -185,6 +211,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
         if ($decoded === []) {
             return Query::all();
         }
+        /** @var array<array{eventTypes?: string[], tags?: string[], onlyLastEvent?: bool}> $decoded */
         return Query::fromItems(...array_map(static fn(array $item) => QueryItem::create(...$item), $decoded));
     }
 }

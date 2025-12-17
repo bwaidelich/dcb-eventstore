@@ -45,7 +45,7 @@
     "test:cs": "vendor/bin/php-cs-fixer check",
     "test:cs:fix": "vendor/bin/php-cs-fixer fix",
     "test:unit": "phpunit tests/Unit",
-    "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream --exclude-group=feature_appendConditionWithoutMatchingEvent",
+    "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream",
     "test": [
       "@test:phpstan",
       "@test:cs",

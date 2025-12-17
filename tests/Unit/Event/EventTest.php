@@ -27,6 +27,9 @@ final class EventTest extends TestCase
         Event::create(type: 'SomeType', data: 'some-data', metadata: 'no-json');
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_create(): iterable
     {
         yield ['input' => ['type' => 'SomeEventType', 'data' => 'some-data'], 'expectedResult' => ['type' => 'SomeEventType', 'data' => 'some-data', 'tags' => [], 'metadata' => []]];
@@ -38,9 +41,14 @@ final class EventTest extends TestCase
         yield ['input' => ['type' => 'SomeEventType', 'data' => 'some-data', 'metadata' => ['foo' => 'bar']], 'expectedResult' => ['type' => 'SomeEventType', 'data' => 'some-data', 'tags' => [], 'metadata' => ['foo' => 'bar']]];
     }
 
+    /**
+     * @param array<mixed> $input
+     * @param array<mixed> $expectedResult
+     */
     #[DataProvider('dataProvider_create')]
     public function test_create(array $input, array $expectedResult): void
     {
+        /** @phpstan-ignore argument.type */
         $event = Event::create(...$input);
         $actualResult = [
             'type' => $event->type->value,

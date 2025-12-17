@@ -29,6 +29,9 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['someKey:someValue'], Tags::create($Tag, $Tag, $Tag));
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_invalidValues(): iterable
     {
         yield [123];
@@ -38,10 +41,10 @@ final class TagsTest extends TestCase
     }
 
     #[DataProvider('dataProvider_invalidValues')]
-    public function test_fromArray_fails_if_specified_value_is_not_valid($value): void
+    public function test_fromArray_fails_if_specified_value_is_not_valid(mixed $value): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Tags::fromArray([$value]);
+        Tags::fromArray([$value]); // @phpstan-ignore argument.type
     }
 
     public function test_fromArray_merges_repeating_tags(): void
@@ -87,6 +90,9 @@ final class TagsTest extends TestCase
         self::assertFalse($ids->intersect(Tag::fromString('foo:foos')));
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_intersects(): iterable
     {
         yield ['ids1' => ['foo:bar'], 'ids2' => ['foo:bar'], 'expectedResult' => true];
@@ -101,6 +107,10 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar', 'baz:foos'], 'ids2' => ['foo:other', 'baz:other'], 'expectedResult' => false];
     }
 
+    /**
+     * @param string[] $ids1
+     * @param string[] $ids2
+     */
     #[DataProvider('dataProvider_intersects')]
     public function test_intersects(array $ids1, array $ids2, bool $expectedResult): void
     {
@@ -111,6 +121,9 @@ final class TagsTest extends TestCase
         }
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_equals(): iterable
     {
         yield ['ids1' => ['foo:bar'], 'ids2' => ['foo:bar'], 'expectedResult' => true];
@@ -121,6 +134,10 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar', 'baz:foos'], 'ids2' => ['foo:other', 'baz:other'], 'expectedResult' => false];
     }
 
+    /**
+     * @param string[] $ids1
+     * @param string[] $ids2
+     */
     #[DataProvider('dataProvider_equals')]
     public function test_equals(array $ids1, array $ids2, bool $expectedResult): void
     {
@@ -163,6 +180,9 @@ final class TagsTest extends TestCase
         self::assertTagsMatch(['foo:bar', 'foo:baz'], $ids1->merge($ids2));
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_merge(): iterable
     {
         yield ['ids1' => ['foo:bar'], 'ids2' => ['foo:bar'], 'expectedResult' => ['foo:bar']];
@@ -170,6 +190,11 @@ final class TagsTest extends TestCase
         yield ['ids1' => ['foo:bar'], 'ids2' => ['bar:baz'], 'expectedResult' => ['bar:baz', 'foo:bar']];
     }
 
+    /**
+     * @param string[] $ids1
+     * @param string[] $ids2
+     * @param string[] $expectedResult
+     */
     #[DataProvider('dataProvider_merge')]
     public function test_merge(array $ids1, array $ids2, array $expectedResult): void
     {
@@ -184,6 +209,9 @@ final class TagsTest extends TestCase
         self::assertFalse($ids->contain(Tag::fromString('foo:foos')));
     }
 
+    /**
+     * @return iterable<array<mixed>>
+     */
     public static function dataProvider_contains(): iterable
     {
         yield ['tags' => ['foo:bar'], 'tag' => 'foo:bar', 'expectedResult' => true];
@@ -194,6 +222,9 @@ final class TagsTest extends TestCase
         yield ['tags' => ['foo:bar', 'baz:foos'], 'tag' => 'notFoo:notBar', 'expectedResult' => false];
     }
 
+    /**
+     * @param string[] $tags
+     */
     #[DataProvider('dataProvider_contains')]
     public function test_contains(array $tags, string $tag, bool $expectedResult): void
     {
@@ -207,11 +238,14 @@ final class TagsTest extends TestCase
     public function test_serialized_format(): void
     {
         $tags = Tags::fromJson('["foo:bar", "bar:foos", "foo:bar", "foo:baz"]');
-        self::assertJsonStringEqualsJsonString('["bar:foos", "foo:bar", "foo:baz"]', json_encode($tags));
+        self::assertJsonStringEqualsJsonString('["bar:foos", "foo:bar", "foo:baz"]', json_encode($tags, JSON_THROW_ON_ERROR));
     }
 
     // --------------------------------------
 
+    /**
+     * @param string[] $expected
+     */
     private static function assertTagsMatch(array $expected, Tags $actual): void
     {
         self::assertSame($expected, $actual->toStrings());
