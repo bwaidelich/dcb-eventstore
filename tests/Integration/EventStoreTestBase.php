@@ -91,6 +91,40 @@ abstract class EventStoreTestBase extends TestCase
         ]);
     }
 
+    public function test_read_returns_all_events_after_first_event_was_accessed(): void
+    {
+        $this->appendDummyEvents();
+        $eventStream = $this->streamAll();
+        $firstEvent = $eventStream->first();
+        self::assertInstanceOf(SequencedEvent::class, $firstEvent);
+        self::assertEquals(['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1], self::sequencedEventToArray(['type', 'data', 'tags', 'position'], $firstEvent));
+        self::assertEventStream($eventStream, [
+            ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1],
+            ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'position' => 2],
+            ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'position' => 3],
+            ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
+            ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 5],
+            ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 6],
+        ]);
+    }
+
+    public function test_read_returns_allows_to_access_first_event_after_iteration(): void
+    {
+        $this->appendDummyEvents();
+        $eventStream = $this->streamAll();
+        self::assertEventStream($eventStream, [
+            ['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1],
+            ['data' => 'b', 'type' => 'SomeOtherEventType', 'tags' => ['foo:bar'], 'position' => 2],
+            ['data' => 'c', 'type' => 'SomeEventType', 'tags' => ['foo:bar'], 'position' => 3],
+            ['data' => 'd', 'type' => 'SomeThirdEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 4],
+            ['data' => 'e', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 5],
+            ['data' => 'f', 'type' => 'SomeOtherEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 6],
+        ]);
+        $firstEvent = $eventStream->first();
+        self::assertInstanceOf(SequencedEvent::class, $firstEvent);
+        self::assertEquals(['data' => 'a', 'type' => 'SomeEventType', 'tags' => ['baz:foos', 'foo:bar'], 'position' => 1], self::sequencedEventToArray(['type', 'data', 'tags', 'position'], $firstEvent));
+    }
+
     public function test_read_allows_to_specify_minimum_position(): void
     {
         $this->appendDummyEvents();

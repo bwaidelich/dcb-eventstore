@@ -14,13 +14,15 @@ use Webmozart\Assert\Assert;
  *
  * @implements IteratorAggregate<SequencedEvent>
  */
-final readonly class SequencedEvents implements IteratorAggregate
+final class SequencedEvents implements IteratorAggregate
 {
+    private SequencedEvent|null $first = null;
+
     /**
      * @param Closure(): Traversable<SequencedEvent> $generator
      */
     private function __construct(
-        private Closure $generator,
+        private readonly Closure $generator,
     ) {}
 
     public static function create(callable $generator): self
@@ -42,14 +44,26 @@ final readonly class SequencedEvents implements IteratorAggregate
      */
     public function getIterator(): Traversable
     {
+        if ($this->first !== null) {
+            yield $this->first;
+        }
         foreach (($this->generator)() as $sequencedEvent) {
             Assert::isInstanceOf($sequencedEvent, SequencedEvent::class, 'Invalid instance of %s returned by generator');
+            if ($this->first !== null && $sequencedEvent->position->equals($this->first->position)) {
+                continue;
+            }
+            if ($this->first === null) {
+                $this->first = $sequencedEvent;
+            }
             yield $sequencedEvent;
         }
     }
 
     public function first(): SequencedEvent|null
     {
+        if ($this->first !== null) {
+            return $this->first;
+        }
         foreach ($this as $sequencedEvent) {
             return $sequencedEvent;
         }

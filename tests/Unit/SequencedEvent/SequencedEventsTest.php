@@ -68,7 +68,7 @@ final class SequencedEventsTest extends TestCase
             new SequencedEvent(SequencePosition::fromInteger(3), new DateTimeImmutable(), Event::create('SomeEventType', 'some-third-data')),
         ];
         $sequencedEvents = SequencedEvents::fromArray($mockSequencedEvents);
-        $sequencedEvents->first();
+        self::assertSame($mockSequencedEvents[0], $sequencedEvents->first());
         self::assertSame($mockSequencedEvents, iterator_to_array($sequencedEvents));
     }
 
@@ -80,7 +80,7 @@ final class SequencedEventsTest extends TestCase
             new SequencedEvent(SequencePosition::fromInteger(3), new DateTimeImmutable(), Event::create('SomeEventType', 'some-third-data')),
         ];
         $sequencedEvents = SequencedEvents::fromArray($mockSequencedEvents);
-        iterator_to_array($sequencedEvents);
+        self::assertSame($mockSequencedEvents, iterator_to_array($sequencedEvents));
         self::assertSame($mockSequencedEvents[0], $sequencedEvents->first());
     }
 }
