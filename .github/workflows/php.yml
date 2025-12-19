@@ -23,6 +23,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
+        coverage: xdebug
 
     - name: Checkout code
       uses: actions/checkout@v3
@@ -44,3 +45,6 @@ jobs:
 
     - name: Run test suite
       run: composer run-script test
+
+    - name: Check code coverage (100% required)
+      run: composer run-script test:unit:coverage:check

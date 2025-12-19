@@ -209,6 +209,32 @@ final class TagsTest extends TestCase
         self::assertFalse($ids->contain(Tag::fromString('foo:foos')));
     }
 
+    public function test_containEvery_returns_true_if_all_tags_are_present(): void
+    {
+        $tags = Tags::fromArray(['foo:bar', 'baz:foos', 'other:tag']);
+        $subset = Tags::fromArray(['foo:bar', 'baz:foos']);
+
+        self::assertTrue($tags->containEvery($subset));
+    }
+
+    public function test_containEvery_returns_false_if_not_all_tags_are_present(): void
+    {
+        $tags = Tags::fromArray(['foo:bar', 'baz:foos']);
+        $superset = Tags::fromArray(['foo:bar', 'baz:foos', 'missing:tag']);
+
+        self::assertFalse($tags->containEvery($superset));
+    }
+
+    public function test_getIterator_allows_iteration(): void
+    {
+        $tags = Tags::fromArray(['foo:bar', 'baz:foos']);
+        $values = [];
+        foreach ($tags as $tag) {
+            $values[] = $tag->value;
+        }
+        self::assertSame(['baz:foos', 'foo:bar'], $values);
+    }
+
     /**
      * @return iterable<array<mixed>>
      */

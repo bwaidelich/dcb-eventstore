@@ -17,10 +17,24 @@ final class EventMetadataTest extends TestCase
         self::assertSame([], EventMetadata::none()->value);
     }
 
+    public function test_fromArray_creates_instance_from_associative_array(): void
+    {
+        $metadata = EventMetadata::fromArray(['key1' => 'value1', 'key2' => 'value2']);
+
+        self::assertSame(['key1' => 'value1', 'key2' => 'value2'], $metadata->value);
+    }
+
     public function test_fromArray_fails_if_array_is_not_associative(): void
     {
         $this->expectException(InvalidArgumentException::class);
         EventMetadata::fromArray(['foo', 'bar']);
+    }
+
+    public function test_fromJson_creates_instance_from_valid_json(): void
+    {
+        $metadata = EventMetadata::fromJson('{"key1": "value1", "key2": "value2"}');
+
+        self::assertSame(['key1' => 'value1', 'key2' => 'value2'], $metadata->value);
     }
 
     public function test_fromJson_fails_if_value_is_no_valid_json(): void

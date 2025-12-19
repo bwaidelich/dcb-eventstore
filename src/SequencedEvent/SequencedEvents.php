@@ -64,6 +64,7 @@ final class SequencedEvents implements IteratorAggregate
         if ($this->first !== null) {
             return $this->first;
         }
+        /** @noinspection LoopWhichDoesNotLoopInspection */
         foreach ($this as $sequencedEvent) {
             return $sequencedEvent;
         }

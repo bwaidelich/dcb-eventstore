@@ -72,6 +72,8 @@ final class QueryItem
 
     public function canBeMerged(self $other): bool
     {
+        /** @noinspection TypeUnsafeComparisonInspection */
+        /** @noinspection PhpNonStrictObjectEqualityInspection */
         return $this->onlyLastEvent === $other->onlyLastEvent && $this->tags == $other->tags;
     }
 
@@ -80,6 +82,8 @@ final class QueryItem
         if ($this->onlyLastEvent !== $other->onlyLastEvent) {
             throw new InvalidArgumentException('Query items with different values for "onlyLasEvent" flag cannot be merged');
         }
+        /** @noinspection TypeUnsafeComparisonInspection */
+        /** @noinspection PhpNonStrictObjectEqualityInspection */
         if ($this->tags != $other->tags) {
             throw new InvalidArgumentException('Query items with tag mismatch cannot be merged');
         }

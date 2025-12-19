@@ -44,8 +44,13 @@
     "test:phpstan": "phpstan",
     "test:cs": "vendor/bin/php-cs-fixer check",
     "test:cs:fix": "vendor/bin/php-cs-fixer fix",
-    "test:unit": "phpunit tests/Unit",
-    "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream",
+    "test:unit": "phpunit tests/Unit --no-coverage",
+    "test:unit:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit tests/Unit --coverage-text --coverage-clover=coverage.xml --coverage-filter=src",
+    "test:unit:coverage:check": [
+      "@test:unit:coverage",
+      "@php check-coverage.php"
+    ],
+    "test:integration": "phpunit tests/Integration --exclude-group=feature_liveStream --no-coverage",
     "test": [
       "@test:phpstan",
       "@test:cs",
