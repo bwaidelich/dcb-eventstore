@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Exceptions;
 
 use RuntimeException;
-use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\EventStore;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 
 /**
  * An exception that is thrown when a {@see EventStore::conditionalAppend()} call has failed

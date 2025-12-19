@@ -18,7 +18,6 @@ use Wwwision\DCBEventStore\Event\EventMetadata;
 use Wwwision\DCBEventStore\Event\Events;
 use Wwwision\DCBEventStore\Event\EventType;
 use Wwwision\DCBEventStore\Event\EventTypes;
-use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\Event\Tag;
 use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\EventStore;
@@ -28,6 +27,7 @@ use Wwwision\DCBEventStore\Query\QueryItem;
 use Wwwision\DCBEventStore\ReadOptions;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 
 use function array_keys;
 use function array_map;

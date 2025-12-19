@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore\AppendCondition;
 
-use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\EventStore;
 use Wwwision\DCBEventStore\Query\Query;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 
 /**
  * Condition for {@see EventStore::append()}

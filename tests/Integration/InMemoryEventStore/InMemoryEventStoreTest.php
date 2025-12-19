@@ -10,12 +10,12 @@ use Wwwision\DCBEventStore\Event\EventData;
 use Wwwision\DCBEventStore\Event\Events;
 use Wwwision\DCBEventStore\Event\EventType;
 use Wwwision\DCBEventStore\Event\EventTypes;
-use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\Event\Tags;
 use Wwwision\DCBEventStore\Exceptions\ConditionalAppendFailed;
 use Wwwision\DCBEventStore\InMemoryEventStore\InMemoryEventStore;
 use Wwwision\DCBEventStore\Query\Query;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 use Wwwision\DCBEventStore\Tests\Integration\EventStoreTestBase;
 
 #[CoversClass(InMemoryEventStore::class)]

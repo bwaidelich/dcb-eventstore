@@ -6,7 +6,6 @@ namespace Wwwision\DCBEventStore\SequencedEvent;
 
 use DateTimeImmutable;
 use Wwwision\DCBEventStore\Event\Event;
-use Wwwision\DCBEventStore\Event\SequencePosition;
 
 /**
  * An {@see Event} with its global {@see SequencePosition} in the Event Store

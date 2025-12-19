@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Medium;
 use PHPUnit\Framework\TestCase;
 use Wwwision\DCBEventStore\Event\Event;
-use Wwwision\DCBEventStore\Event\SequencePosition;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvent;
 use Wwwision\DCBEventStore\SequencedEvent\SequencedEvents;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 
 #[CoversClass(SequencedEvents::class)]
 #[Medium]

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Wwwision\DCBEventStore;
 
-use Wwwision\DCBEventStore\Event\SequencePosition;
+use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 
 /**
  * Condition for {@see EventStore::read()} and {@see EventStore::readAll()}
