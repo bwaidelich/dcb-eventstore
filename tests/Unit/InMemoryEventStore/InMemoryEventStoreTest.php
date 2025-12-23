@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Unit\InMemoryEventStore;
+namespace Wwwision\DCBEventStore\Tests\Unit\InMemoryEventStore;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;

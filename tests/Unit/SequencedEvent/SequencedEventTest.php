@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Unit\SequencedEvent;
+namespace Wwwision\DCBEventStore\Tests\Unit\SequencedEvent;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;

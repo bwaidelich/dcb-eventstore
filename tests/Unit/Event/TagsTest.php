@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Unit\Event;
+namespace Wwwision\DCBEventStore\Tests\Unit\Event;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

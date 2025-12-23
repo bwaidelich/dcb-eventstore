@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Unit\Event;
+namespace Wwwision\DCBEventStore\Tests\Unit\Event;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Medium;

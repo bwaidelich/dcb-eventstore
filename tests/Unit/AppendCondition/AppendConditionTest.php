@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Unit\AppendCondition;
+namespace Wwwision\DCBEventStore\Tests\Unit\AppendCondition;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Medium;
