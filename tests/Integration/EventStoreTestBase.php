@@ -524,7 +524,7 @@ abstract class EventStoreTestBase extends TestCase
      */
     final protected function conditionalAppendEvents(array $events, Query $query, SequencePosition|null $after = null): void
     {
-        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), new AppendCondition($query, $after));
+        $this->getEventStore()->append(Events::fromArray(array_map(self::arrayToEvent(...), $events)), AppendCondition::create($query, $after));
     }
 
     /**

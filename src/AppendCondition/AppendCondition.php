@@ -13,8 +13,18 @@ use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
  */
 final class AppendCondition
 {
-    public function __construct(
+    private function __construct(
         public readonly Query $failIfEventsMatch,
         public readonly SequencePosition|null $after,
     ) {}
+
+    public static function create(
+        Query $failIfEventsMatch,
+        SequencePosition|int|null $after = null,
+    ): self {
+        if (is_int($after)) {
+            $after = SequencePosition::fromInteger($after);
+        }
+        return new self($failIfEventsMatch, $after);
+    }
 }

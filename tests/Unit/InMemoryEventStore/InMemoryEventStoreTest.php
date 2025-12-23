@@ -248,9 +248,8 @@ final class InMemoryEventStoreTest extends TestCase
         $eventStore = InMemoryEventStore::create($this->clock);
         $eventStore->append(Event::create('Event1', '{}', 'user:123'));
 
-        $condition = new AppendCondition(
+        $condition = AppendCondition::create(
             failIfEventsMatch: Query::fromItems(QueryItem::create(tags: 'user:456')),
-            after: null,
         );
 
         $eventStore->append(Event::create('Event2', '{}'), $condition);
@@ -264,9 +263,8 @@ final class InMemoryEventStoreTest extends TestCase
         $eventStore = InMemoryEventStore::create($this->clock);
         $eventStore->append(Event::create('Event1', '{}', 'user:123'));
 
-        $condition = new AppendCondition(
+        $condition = AppendCondition::create(
             failIfEventsMatch: Query::fromItems(QueryItem::create(tags: 'user:123')),
-            after: null,
         );
 
         $this->expectException(ConditionalAppendFailed::class);
@@ -281,9 +279,9 @@ final class InMemoryEventStoreTest extends TestCase
             Event::create('Event2', '{}', 'user:456'),
         ]));
 
-        $condition = new AppendCondition(
+        $condition = AppendCondition::create(
             failIfEventsMatch: Query::fromItems(QueryItem::create(tags: 'user:123')),
-            after: SequencePosition::fromInteger(1),
+            after: 1,
         );
 
         $eventStore->append(Event::create('Event3', '{}'), $condition);
@@ -300,9 +298,9 @@ final class InMemoryEventStoreTest extends TestCase
             Event::create('Event2', '{}', 'user:123'),
         ]));
 
-        $condition = new AppendCondition(
+        $condition = AppendCondition::create(
             failIfEventsMatch: Query::fromItems(QueryItem::create(tags: 'user:123')),
-            after: SequencePosition::fromInteger(1),
+            after: 1,
         );
 
         $this->expectException(ConditionalAppendFailed::class);

@@ -102,7 +102,7 @@ abstract class EventStoreConcurrencyTestBase extends TestCase
                 $events[] = Event::create(type: self::either(...$eventTypes), data: EventData::fromString(json_encode($eventData, JSON_THROW_ON_ERROR)), tags: Tags::create(...self::some($numberOfTags, ...$tags)), metadata: EventMetadata::none());
             }
             try {
-                static::createEventStore()->append(Events::fromArray($events), new AppendCondition($query, $expectedHighestSequencePosition));
+                static::createEventStore()->append(Events::fromArray($events), AppendCondition::create($query, $expectedHighestSequencePosition));
             } catch (ConditionalAppendFailed $e) {
             }
         }

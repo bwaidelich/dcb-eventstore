@@ -16,22 +16,22 @@ use Wwwision\DCBEventStore\SequencedEvent\SequencePosition;
 #[Medium]
 final class AppendConditionTest extends TestCase
 {
-    public function test_constructor_sets_properties(): void
+    public function test_create_sets_properties(): void
     {
         $query = Query::fromItems(QueryItem::create(eventTypes: 'SomeType'));
         $position = SequencePosition::fromInteger(10);
 
-        $condition = new AppendCondition($query, $position);
+        $condition = AppendCondition::create($query, $position);
 
         self::assertSame($query, $condition->failIfEventsMatch);
         self::assertSame($position, $condition->after);
     }
 
-    public function test_constructor_with_null_after(): void
+    public function test_create_without_after(): void
     {
         $query = Query::fromItems(QueryItem::create(tags: 'some-tag'));
 
-        $condition = new AppendCondition($query, null);
+        $condition = AppendCondition::create($query);
 
         self::assertSame($query, $condition->failIfEventsMatch);
         self::assertNull($condition->after);
@@ -42,7 +42,7 @@ final class AppendConditionTest extends TestCase
         $query = Query::fromItems(QueryItem::create(eventTypes: 'TestType'));
         $position = SequencePosition::fromInteger(5);
 
-        $condition = new AppendCondition($query, $position);
+        $condition = AppendCondition::create($query, $position);
 
         self::assertSame($query, $condition->failIfEventsMatch);
         self::assertSame($position, $condition->after);
