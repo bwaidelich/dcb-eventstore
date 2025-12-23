@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Event;
 
 use JsonSerializable;
+use Stringable;
 use Webmozart\Assert\Assert;
 
 /**
  * Tag that can be attached to an {@see Event}, usually containing some identifier for an entity or concept of the core domain, for example "product:sku123"
  */
-final class Tag implements JsonSerializable
+final class Tag implements JsonSerializable, Stringable
 {
     public const int LENGTH_MAX = 150;
 
@@ -42,6 +43,11 @@ final class Tag implements JsonSerializable
     }
 
     public function jsonSerialize(): string
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
     {
         return $this->value;
     }

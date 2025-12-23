@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Wwwision\DCBEventStore\Event;
 
 use JsonSerializable;
+use Stringable;
 use Webmozart\Assert\Assert;
 
 /**
  * The type of event, e.g. "CustomerRenamed"
  */
-final class EventType implements JsonSerializable
+final class EventType implements JsonSerializable, Stringable
 {
     public const int LENGTH_MAX = 255;
 
@@ -30,6 +31,11 @@ final class EventType implements JsonSerializable
     }
 
     public function jsonSerialize(): string
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
     {
         return $this->value;
     }

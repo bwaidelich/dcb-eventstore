@@ -7,12 +7,13 @@ namespace Wwwision\DCBEventStore\Event;
 use JsonException;
 use JsonSerializable;
 use RuntimeException;
+use Stringable;
 use Webmozart\Assert\Assert;
 
 /**
  * String-based data of an event (usually the JSON-encoded payload of a domain event
  */
-final class EventData implements JsonSerializable
+final class EventData implements JsonSerializable, Stringable
 {
     private function __construct(
         public readonly string $value,
@@ -40,5 +41,10 @@ final class EventData implements JsonSerializable
         }
         Assert::isArray($result);
         return $result;
+    }
+
+    public function __toString(): string
+    {
+        return $this->value;
     }
 }
