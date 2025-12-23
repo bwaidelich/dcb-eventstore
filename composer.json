@@ -54,7 +54,7 @@
     "test": [
       "@test:phpstan",
       "@test:cs",
-      "@test:unit",
+      "@test:unit:coverage:check",
       "@test:integration"
     ]
   }

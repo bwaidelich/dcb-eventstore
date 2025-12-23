@@ -33,4 +33,11 @@ final class EventTypeTest extends TestCase
 
         self::assertSame('TestType', $eventType->jsonSerialize());
     }
+
+    public function test_toString_returns_string_value(): void
+    {
+        $eventType = EventType::fromString('TestType');
+
+        self::assertSame('TestType', (string) $eventType);
+    }
 }

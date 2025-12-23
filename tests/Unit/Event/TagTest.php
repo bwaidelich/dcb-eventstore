@@ -142,4 +142,11 @@ final class TagTest extends TestCase
 
         self::assertSame('"product:123"', $json);
     }
+
+    public function test_toString_returns_string_value(): void
+    {
+        $tag = Tag::fromString('product:123');
+
+        self::assertSame('product:123', (string) $tag);
+    }
 }

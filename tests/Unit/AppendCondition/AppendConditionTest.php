@@ -27,6 +27,12 @@ final class AppendConditionTest extends TestCase
         self::assertSame($position, $condition->after);
     }
 
+    public function test_create_converts_after(): void
+    {
+        $condition = AppendCondition::create(Query::all(), 123);
+        self::assertSame(123, $condition->after?->value);
+    }
+
     public function test_create_without_after(): void
     {
         $query = Query::fromItems(QueryItem::create(tags: 'some-tag'));

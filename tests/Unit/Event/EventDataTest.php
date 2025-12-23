@@ -51,4 +51,10 @@ final class EventDataTest extends TestCase
         $eventData = EventData::fromString('input');
         self::assertSame('"input"', json_encode($eventData, JSON_THROW_ON_ERROR));
     }
+
+    public function test_toString_represents_value(): void
+    {
+        $eventData = EventData::fromString('input');
+        self::assertSame('input', (string) $eventData);
+    }
 }
