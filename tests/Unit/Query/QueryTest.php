@@ -247,4 +247,25 @@ final class QueryTest extends TestCase
         });
         self::assertSame([], $result);
     }
+
+    public function test_jsonSerialize_returns_query_items(): void
+    {
+        $queryItems = [
+            QueryItem::create(eventTypes: 'SomeEventType'),
+            QueryItem::create(tags: 'some:tag'),
+        ];
+        $query = Query::fromItems(...$queryItems);
+        self::assertSame($queryItems, $query->jsonSerialize());
+    }
+
+    public function test_json_encode_contains_all_information(): void
+    {
+        $queryItems = [
+            QueryItem::create(eventTypes: ['SomeEventType', 'SomeOtherEventType'], onlyLastEvent: true),
+            QueryItem::create(tags: ['some:tag', 'some:other-tag']),
+        ];
+        $query = Query::fromItems(...$queryItems);
+        $encoded = json_encode($query->jsonSerialize(), JSON_THROW_ON_ERROR);
+        self::assertJsonStringEqualsJsonString('[{"eventTypes":["SomeEventType","SomeOtherEventType"],"tags":null,"onlyLastEvent": true},{"eventTypes":null,"tags":["some:other-tag","some:tag"],"onlyLastEvent":false}]', $encoded);
+    }
 }

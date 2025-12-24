@@ -6,6 +6,7 @@ namespace Wwwision\DCBEventStore\Query;
 
 use Closure;
 use IteratorAggregate;
+use JsonSerializable;
 use Traversable;
 use Webmozart\Assert\Assert;
 use Wwwision\DCBEventStore\Event\Event;
@@ -17,7 +18,7 @@ use Wwwision\DCBEventStore\Event\Tags;
  *
  * @implements IteratorAggregate<QueryItem>
  */
-final class Query implements IteratorAggregate
+final class Query implements IteratorAggregate, JsonSerializable
 {
     /**
      * @param array<QueryItem> $items
@@ -111,5 +112,13 @@ final class Query implements IteratorAggregate
     public function getIterator(): Traversable
     {
         yield from array_values($this->items);
+    }
+
+    /**
+     * @return array<QueryItem>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->items;
     }
 }
