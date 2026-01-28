@@ -54,7 +54,7 @@ final class EventsTest extends TestCase
         $event2 = Event::create('Type2', EventData::fromString('{}'));
         $events = Events::fromArray([$event1, $event2]);
 
-        $result = $events->map(fn(Event $e) => $e->type->value);
+        $result = $events->map(static fn(Event $e) => $e->type->value);
 
         self::assertSame(['Type1', 'Type2'], $result);
     }
@@ -66,7 +66,7 @@ final class EventsTest extends TestCase
         $event3 = Event::create('Type1', EventData::fromString('{}'));
         $events = Events::fromArray([$event1, $event2, $event3]);
 
-        $filtered = $events->filter(fn(Event $e) => $e->type->value === 'Type1');
+        $filtered = $events->filter(static fn(Event $e) => $e->type->value === 'Type1');
 
         self::assertCount(2, $filtered);
     }
@@ -148,7 +148,7 @@ final class EventsTest extends TestCase
         $event2 = Event::create('Type2', EventData::fromString('{}'));
         $events = Events::fromArray([$event1, $event2]);
 
-        $filtered = $events->filter(fn(Event $e) => $e->type->value === 'Type1');
+        $filtered = $events->filter(static fn(Event $e) => $e->type->value === 'Type1');
 
         self::assertNotSame($events, $filtered);
         self::assertCount(2, $events);

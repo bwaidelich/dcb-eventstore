@@ -68,32 +68,53 @@ final class QueryTest extends TestCase
      */
     public static function dataProvider_merge(): iterable
     {
-        // Basic cases: merging identical event types
-        yield 'identical event types' => ['items1' => [QueryItem::create(eventTypes: 'SomeEventType')], 'items2' => [QueryItem::create(eventTypes: 'SomeEventType')], 'expectedResult' => [QueryItem::create(eventTypes: 'SomeEventType')]];
+        yield 'identical event types' => [
+            'items1' => [QueryItem::create(eventTypes: 'SomeEventType')],
+            'items2' => [QueryItem::create(eventTypes: 'SomeEventType')],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'SomeEventType'),
+            ],
+        ];
 
-        // Basic cases: merging different event types with no tags
-        yield 'different event types, no tags' => ['items1' => [QueryItem::create(eventTypes: 'SomeEventType')], 'items2' => [QueryItem::create(eventTypes: 'SomeOtherEventType')], 'expectedResult' => [QueryItem::create(eventTypes: ['SomeEventType', 'SomeOtherEventType'])]];
+        yield 'different event types, no tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'SomeEventType')],
+            'items2' => [QueryItem::create(eventTypes: 'SomeOtherEventType')],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: ['SomeEventType', 'SomeOtherEventType']),
+            ],
+        ];
 
-        // Basic cases: different tags cannot be merged
-        yield 'different tags' => ['items1' => [QueryItem::create(tags: 'tag1')], 'items2' => [QueryItem::create(tags: 'tag2')], 'expectedResult' => [QueryItem::create(tags: 'tag1'), QueryItem::create(tags: 'tag2')]];
+        yield 'different tags' => [
+            'items1' => [QueryItem::create(tags: 'tag1')],
+            'items2' => [QueryItem::create(tags: 'tag2')],
+            'expectedResult' => [
+                QueryItem::create(tags: 'tag1'),
+                QueryItem::create(tags: 'tag2'),
+            ],
+        ];
 
-        // Merging with same tags and different event types
-        yield 'same tags, different event types' => ['items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')], 'items2' => [QueryItem::create(eventTypes: 'TypeB', tags: 'tag1')], 'expectedResult' => [QueryItem::create(eventTypes: ['TypeA', 'TypeB'], tags: 'tag1')]];
+        yield 'same tags, different event types' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
+            'items2' => [QueryItem::create(eventTypes: 'TypeB', tags: 'tag1')],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: ['TypeA', 'TypeB'], tags: 'tag1'),
+            ],
+        ];
 
-        // Merging with same tags and same event types
-        yield 'same tags, same event types' => ['items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')], 'items2' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')], 'expectedResult' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')]];
+        yield 'same tags, same event types' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
+            'items2' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
+            'expectedResult' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
+        ];
 
-        // Multiple items where all can be merged
         yield 'multiple items, all mergeable' => [
             'items1' => [QueryItem::create(eventTypes: 'TypeA'), QueryItem::create(eventTypes: 'TypeB')],
             'items2' => [QueryItem::create(eventTypes: 'TypeC')],
             'expectedResult' => [
-                QueryItem::create(eventTypes: ['TypeA', 'TypeC']),
-                QueryItem::create(eventTypes: ['TypeB', 'TypeC']),
+                QueryItem::create(eventTypes: ['TypeA', 'TypeB', 'TypeC']),
             ],
         ];
 
-        // Multiple items where some can be merged and some cannot
         yield 'mixed mergeable and non-mergeable' => [
             'items1' => [QueryItem::create(eventTypes: 'TypeA'), QueryItem::create(tags: 'tag1')],
             'items2' => [QueryItem::create(eventTypes: 'TypeB'), QueryItem::create(tags: 'tag2')],
@@ -104,14 +125,67 @@ final class QueryTest extends TestCase
             ],
         ];
 
-        // Merging with onlyLastEvent flag set to true
-        yield 'onlyLastEvent flag true, same tags' => [
+        yield 'onlyLastEvent flag true, different types, no tags' => [
             'items1' => [QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true)],
             'items2' => [QueryItem::create(eventTypes: 'TypeB', onlyLastEvent: true)],
-            'expectedResult' => [QueryItem::create(eventTypes: ['TypeA', 'TypeB'], onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true),
+                QueryItem::create(eventTypes: 'TypeB', onlyLastEvent: true),
+            ],
         ];
 
-        // Cannot merge items with different onlyLastEvent flags
+        yield 'onlyLastEvent flag true, same types, no tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true)],
+            'items2' => [QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true),
+            ],
+        ];
+
+        yield 'onlyLastEvent flag true, different types, same tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true)],
+            'items2' => [QueryItem::create(eventTypes: 'TypeB', tags: 'tag1', onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true),
+                QueryItem::create(eventTypes: 'TypeB', tags: 'tag1', onlyLastEvent: true),
+            ],
+        ];
+
+        yield 'onlyLastEvent flag true, different types, different tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true)],
+            'items2' => [QueryItem::create(eventTypes: 'TypeB', tags: 'tag2', onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true),
+                QueryItem::create(eventTypes: 'TypeB', tags: 'tag2', onlyLastEvent: true),
+            ],
+        ];
+
+        yield 'onlyLastEvent flag true, same types, different tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true)],
+            'items2' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag2', onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true),
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag2', onlyLastEvent: true),
+            ],
+        ];
+
+        yield 'onlyLastEvent flag true, same types, same tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: ['tag1', 'tag2'], onlyLastEvent: true)],
+            'items2' => [QueryItem::create(eventTypes: 'TypeA', tags: ['tag2', 'tag1'], onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: ['tag1', 'tag2'], onlyLastEvent: true),
+            ],
+        ];
+
+        yield 'onlyLastEvent flag true, one with eventTypes one without, same tags' => [
+            'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true)],
+            'items2' => [QueryItem::create(tags: 'tag1', onlyLastEvent: true)],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag1', onlyLastEvent: true),
+                QueryItem::create(tags: 'tag1', onlyLastEvent: true),
+            ],
+        ];
+
         yield 'different onlyLastEvent flags' => [
             'items1' => [QueryItem::create(eventTypes: 'TypeA', onlyLastEvent: true)],
             'items2' => [QueryItem::create(eventTypes: 'TypeB', onlyLastEvent: false)],
@@ -121,14 +195,14 @@ final class QueryTest extends TestCase
             ],
         ];
 
-        // Merging where one has eventTypes and the other doesn't (but same tags)
         yield 'one with eventTypes, one without, same tags' => [
             'items1' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
             'items2' => [QueryItem::create(tags: 'tag1')],
-            'expectedResult' => [QueryItem::create(eventTypes: 'TypeA', tags: 'tag1')],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: 'TypeA', tags: 'tag1'),
+            ],
         ];
 
-        // Multiple items in both queries with various combinations
         yield 'complex scenario with multiple items' => [
             'items1' => [
                 QueryItem::create(eventTypes: 'TypeA', tags: 'tag1'),
@@ -142,20 +216,20 @@ final class QueryTest extends TestCase
             ],
             'expectedResult' => [
                 QueryItem::create(eventTypes: ['TypeA', 'TypeC'], tags: 'tag1'),
-                QueryItem::create(tags: 'tag3'),
                 QueryItem::create(eventTypes: 'TypeB', tags: 'tag2'),
+                QueryItem::create(tags: 'tag3'),
                 QueryItem::create(eventTypes: 'TypeD', tags: 'tag4'),
             ],
         ];
 
-        // Merging with multiple event types already present
         yield 'multiple event types already present' => [
             'items1' => [QueryItem::create(eventTypes: ['TypeA', 'TypeB'])],
             'items2' => [QueryItem::create(eventTypes: ['TypeC', 'TypeD'])],
-            'expectedResult' => [QueryItem::create(eventTypes: ['TypeA', 'TypeB', 'TypeC', 'TypeD'])],
+            'expectedResult' => [
+                QueryItem::create(eventTypes: ['TypeA', 'TypeB', 'TypeC', 'TypeD']),
+            ],
         ];
 
-        // Three items in each query with same tags
         yield 'three items each, all same tags' => [
             'items1' => [
                 QueryItem::create(eventTypes: 'TypeA', tags: 'tag1'),
@@ -168,15 +242,7 @@ final class QueryTest extends TestCase
                 QueryItem::create(eventTypes: 'TypeF', tags: 'tag1'),
             ],
             'expectedResult' => [
-                QueryItem::create(eventTypes: ['TypeA', 'TypeD'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeA', 'TypeE'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeA', 'TypeF'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeB', 'TypeD'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeB', 'TypeE'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeB', 'TypeF'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeC', 'TypeD'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeC', 'TypeE'], tags: 'tag1'),
-                QueryItem::create(eventTypes: ['TypeC', 'TypeF'], tags: 'tag1'),
+                QueryItem::create(eventTypes: ['TypeA', 'TypeB', 'TypeC', 'TypeD', 'TypeE', 'TypeF'], tags: 'tag1'),
             ],
         ];
     }
@@ -236,13 +302,13 @@ final class QueryTest extends TestCase
         $result = Query::fromItems(
             QueryItem::create(eventTypes: 'SomeEventType'),
             QueryItem::create(tags: 'someTag'),
-        )->map(fn(QueryItem $item) => $item->eventTypes?->toStringArray());
+        )->map(static fn(QueryItem $item) => $item->eventTypes?->toStringArray());
         self::assertSame([['SomeEventType'], null], $result);
     }
 
     public function test_map_works_with_query_with_items(): void
     {
-        $result = Query::all()->map(function () {
+        $result = Query::all()->map(static function () {
             self::fail('Callback should not be invoked');
         });
         self::assertSame([], $result);

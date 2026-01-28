@@ -25,7 +25,7 @@ final class EventTypes implements IteratorAggregate, JsonSerializable
      * @param array<string, EventType> $types
      */
     private function __construct(
-        public readonly array $types,
+        private readonly array $types,
     ) {
         Assert::notEmpty($this->types, 'EventTypes must not be empty');
     }
@@ -82,10 +82,15 @@ final class EventTypes implements IteratorAggregate, JsonSerializable
 
     public function merge(self $other): self
     {
-        if ($this->types === $other->types) {
+        if ($this->equals($other)) {
             return $this;
         }
         return self::fromArray(array_merge($this->types, $other->types));
+    }
+
+    public function equals(self $other): bool
+    {
+        return array_keys($this->types) === array_keys($other->types);
     }
 
     /**
