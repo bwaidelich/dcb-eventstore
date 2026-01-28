@@ -94,4 +94,25 @@ final class EventTypesTest extends TestCase
         $merged = $eventTypes->merge($eventTypes);
         self::assertSame($eventTypes, $merged);
     }
+
+    public function test_equals_returns_true_for_identical_types(): void
+    {
+        $eventTypes1 = EventTypes::fromStrings('Type1', 'Type2');
+        $eventTypes2 = EventTypes::fromStrings('Type1', 'Type2');
+        self::assertTrue($eventTypes1->equals($eventTypes2));
+    }
+
+    public function test_equals_returns_true_regardless_of_order(): void
+    {
+        $eventTypes1 = EventTypes::fromStrings('Type1', 'Type2');
+        $eventTypes2 = EventTypes::fromStrings('Type2', 'Type1');
+        self::assertTrue($eventTypes1->equals($eventTypes2));
+    }
+
+    public function test_equals_returns_false_for_different_types(): void
+    {
+        $eventTypes1 = EventTypes::fromStrings('Type1', 'Type2');
+        $eventTypes2 = EventTypes::fromStrings('Type1', 'Type3');
+        self::assertFalse($eventTypes1->equals($eventTypes2));
+    }
 }

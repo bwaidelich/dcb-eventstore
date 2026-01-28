@@ -51,34 +51,24 @@ final class Query implements IteratorAggregate, JsonSerializable
         if ($other->items === []) {
             return $other;
         }
-        $mergedItems = [];
-        $unmergedThis = [];
-        $usedOther = [];
 
-        foreach ($this->items as $item) {
-            $merged = false;
-            foreach ($other->items as $otherItemIndex => $otherItem) {
-                if ($item->canBeMerged($otherItem)) {
-                    $mergedItems[] = $item->merge($otherItem);
-                    $merged = true;
-                    $usedOther[$otherItemIndex] = true;
+        // Collect all items and iteratively merge compatible ones
+        $merged = [];
+        foreach ([...$this->items, ...$other->items] as $item) {
+            $foundMatch = false;
+            foreach ($merged as $i => $existing) {
+                if (self::itemsCanBeMerged($existing, $item)) {
+                    $merged[$i] = $existing->merge($item);
+                    $foundMatch = true;
+                    break;
                 }
             }
-            if (!$merged) {
-                $unmergedThis[] = $item;
-            }
-        }
-        // Add items from this query that weren't merged
-        array_push($mergedItems, ...$unmergedThis);
-
-        // Add items from other query that weren't merged
-        foreach ($other->items as $j => $otherItem) {
-            if (!isset($usedOther[$j])) {
-                $mergedItems[] = $otherItem;
+            if (!$foundMatch) {
+                $merged[] = $item;
             }
         }
 
-        return new self($mergedItems);
+        return new self($merged);
     }
 
     public function hasItems(): bool
@@ -121,4 +111,38 @@ final class Query implements IteratorAggregate, JsonSerializable
     {
         return $this->items;
     }
+
+    // ----------------------
+
+    private static function itemsCanBeMerged(QueryItem $a, QueryItem $b): bool
+    {
+        if ($a->onlyLastEvent !== $b->onlyLastEvent) {
+            return false;
+        }
+        if (!self::tagsAreEqual($a->tags, $b->tags)) {
+            return false;
+        }
+        if ($a->onlyLastEvent) {
+            // When onlyLastEvent is true, only merge if eventTypes also match
+            return self::eventTypesAreEqual($a->eventTypes, $b->eventTypes);
+        }
+        return true;
+    }
+
+    private static function tagsAreEqual(Tags|null $a, Tags|null $b): bool
+    {
+        if ($a === null || $b === null) {
+            return $a === $b;
+        }
+        return $a->equals($b);
+    }
+
+    private static function eventTypesAreEqual(EventTypes|null $a, EventTypes|null $b): bool
+    {
+        if ($a === null || $b === null) {
+            return $a === $b;
+        }
+        return $a->equals($b);
+    }
+
 }
