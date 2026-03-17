@@ -10,19 +10,110 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  coding-standards:
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        php-versions: [ '8.3', '8.4', '8.5' ]
-
-    runs-on: ubuntu-latest
+        php-version:
+         - '8.4'
+        dependencies:
+          - 'highest'
 
     steps:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: ${{ matrix.php-versions }}
+        php-version: ${{ matrix.php-version }}
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install lowest dependencies
+      if: matrix.dependencies == 'lowest'
+      run: composer update --prefer-dist --prefer-lowest --no-progress
+
+    - name: Install locked dependencies
+      if: matrix.dependencies == 'locked'
+      run: composer install --prefer-dist --no-progress
+
+    - name: Install highest dependencies
+      if: matrix.dependencies == 'highest'
+      run: composer update --prefer-dist --no-progress
+
+    - name: Check coding standards
+      run: composer run-script test:cs
+
+  static-code-analysis:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version:
+         - '8.4'
+        dependencies:
+          - 'highest'
+
+    steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install lowest dependencies
+      if: matrix.dependencies == 'lowest'
+      run: composer update --prefer-dist --prefer-lowest --no-progress
+
+    - name: Install locked dependencies
+      if: matrix.dependencies == 'locked'
+      run: composer install --prefer-dist --no-progress
+
+    - name: Install highest dependencies
+      if: matrix.dependencies == 'highest'
+      run: composer update --prefer-dist --no-progress
+
+    - name: Run static code analysis
+      run: composer run-script test:phpstan
+
+  tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.3'
+          - '8.4'
+          - '8.5'
+        dependencies:
+          - 'highest'
+
+    steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
         coverage: xdebug
 
     - name: Checkout code
@@ -40,11 +131,20 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
-    - name: Install dependencies
+    - name: Install lowest dependencies
+      if: matrix.dependencies == 'lowest'
+      run: composer update --prefer-dist --prefer-lowest --no-progress
+
+    - name: Install locked dependencies
+      if: matrix.dependencies == 'locked'
       run: composer install --prefer-dist --no-progress
 
-    - name: Run test suite
-      run: composer run-script test
+    - name: Install highest dependencies
+      if: matrix.dependencies == 'highest'
+      run: composer update --prefer-dist --no-progress
 
-    - name: Check code coverage (100% required)
+    - name: Run unit tests with coverage
       run: composer run-script test:unit:coverage:check
+
+    - name: Run integration tests
+      run: composer run-script test:integration
