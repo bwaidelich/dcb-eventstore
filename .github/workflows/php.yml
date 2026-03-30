@@ -21,37 +21,37 @@ jobs:
           - 'highest'
 
     steps:
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-version }}
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-    - name: Install lowest dependencies
-      if: matrix.dependencies == 'lowest'
-      run: composer update --prefer-dist --prefer-lowest --no-progress
+      - name: Install lowest dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-dist --prefer-lowest --no-progress
 
-    - name: Install locked dependencies
-      if: matrix.dependencies == 'locked'
-      run: composer install --prefer-dist --no-progress
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: composer install --prefer-dist --no-progress
 
-    - name: Install highest dependencies
-      if: matrix.dependencies == 'highest'
-      run: composer update --prefer-dist --no-progress
+      - name: Install highest dependencies
+        if: matrix.dependencies == 'highest'
+        run: composer update --prefer-dist --no-progress
 
-    - name: Check coding standards
-      run: composer run-script test:cs
+      - name: Check coding standards
+        run: composer run-script test:cs
 
   static-code-analysis:
     runs-on: ubuntu-latest
@@ -64,37 +64,37 @@ jobs:
           - 'highest'
 
     steps:
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-version }}
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-    - name: Install lowest dependencies
-      if: matrix.dependencies == 'lowest'
-      run: composer update --prefer-dist --prefer-lowest --no-progress
+      - name: Install lowest dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-dist --prefer-lowest --no-progress
 
-    - name: Install locked dependencies
-      if: matrix.dependencies == 'locked'
-      run: composer install --prefer-dist --no-progress
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: composer install --prefer-dist --no-progress
 
-    - name: Install highest dependencies
-      if: matrix.dependencies == 'highest'
-      run: composer update --prefer-dist --no-progress
+      - name: Install highest dependencies
+        if: matrix.dependencies == 'highest'
+        run: composer update --prefer-dist --no-progress
 
-    - name: Run static code analysis
-      run: composer run-script test:phpstan
+      - name: Run static code analysis
+        run: composer run-script test:phpstan
 
   tests:
     runs-on: ubuntu-latest
@@ -111,41 +111,41 @@ jobs:
           - 'highest'
 
     steps:
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-version }}
-        coverage: xdebug
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: xdebug
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-    - name: Install lowest dependencies
-      if: matrix.dependencies == 'lowest'
-      run: composer update --prefer-dist --prefer-lowest --no-progress
+      - name: Install lowest dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-dist --prefer-lowest --no-progress
 
-    - name: Install locked dependencies
-      if: matrix.dependencies == 'locked'
-      run: composer install --prefer-dist --no-progress
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: composer install --prefer-dist --no-progress
 
-    - name: Install highest dependencies
-      if: matrix.dependencies == 'highest'
-      run: composer update --prefer-dist --no-progress
+      - name: Install highest dependencies
+        if: matrix.dependencies == 'highest'
+        run: composer update --prefer-dist --no-progress
 
-    - name: Run unit tests with coverage
-      run: composer run-script test:unit:coverage:check
+      - name: Run unit tests with coverage
+        run: composer run-script test:unit:coverage:check
 
-    - name: Run integration tests
-      run: composer run-script test:integration
+      - name: Run integration tests
+        run: composer run-script test:integration
