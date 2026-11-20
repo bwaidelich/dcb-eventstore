@@ -40,7 +40,7 @@ final class SequencedEventsTest extends TestCase
     {
         $sequencedEvents = SequencedEvents::create(static fn() => yield new \stdClass());
         $this->expectException(InvalidArgumentException::class);
-        $sequencedEvents->first();
+        $sequencedEvents->first(); // @phpstan-ignore method.resultUnused
     }
 
     public function test_first_returns_null_if_stream_is_empty(): void
